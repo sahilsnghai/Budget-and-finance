@@ -6,7 +6,7 @@ cryptography==41.0.5
 Django==4.2.7
 django-livesync==0.5
 idna==3.4
-mysqlclient==2.2.0
+# mysqlclient==2.2.0
 pycparser==2.21
 PyJWT==2.4.0
 pytz==2023.3.post1
