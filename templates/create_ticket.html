@@ -81,10 +81,11 @@ input[type="submit"]:hover {
 </style>
 
 <div class="form-container">
-  {% if '-ticket/' in request.META.HTTP_REFERER %}
-  <h2>Create a New Task</h2>
-  {% else %}
+  {{request.get_full_path}}
+  {% if 'edit' in request.get_full_path %}
   <h2>Edit Task</h2>
+  {% else %}
+  <h2>Create a New Task</h2>
   {% endif %}
   <form id="form-ticket" method="post">
 
