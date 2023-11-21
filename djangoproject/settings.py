@@ -31,8 +31,11 @@ TEMPLATE_DEBUG = True
 # LOGIN_URL = 'login'
 
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*",'https://rsh.lumenore.com']
 
+CSRF_TRUSTED_ORIGINS = ['https://rsh.lumenore.com']
+CORS_ALLOWED_ORIGINS = ['https://rsh.lumenore.com']
+CSRF_COOKIE_SECURE=True
 
 # Application definition
 

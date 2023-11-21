@@ -7,4 +7,4 @@ __init__.py
 __pycache__
 
 
-db.sqilte3
+db.sqlite3
