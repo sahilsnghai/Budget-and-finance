@@ -31,7 +31,7 @@ TEMPLATE_DEBUG = True
 # LOGIN_URL = 'login'
 
 
-ALLOWED_HOSTS = ['https://*.lumenore.com']
+ALLOWED_HOSTS = ['*.lumenore.com',"*"]
 
 CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com']
 CORS_ALLOWED_ORIGINS = ['https://*.lumenore.com']
