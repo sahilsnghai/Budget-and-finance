@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+  <div class="project-list-container">
+    <h2>● Project List</h2>
+    <div class="project-list">
+      {% for project in projects %}
+        <div class="project-card">
+          <a href="{% url 'project' project.ticket_projectid %}" id="owner" class="project-link">
+            <h3 id="h33">{{ project.name }}</h3> owned by {{ project.owner__name }}
+          </a>
+          <p class="project-description">{{ project.description }}</p>
+        </div>
+      {% endfor %}
+    
+  </div>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  text-decoration: none;
+}
+
+.project-list-container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 50px;
+  margin-top: -80px;
+  margin-left: 250px;
+  padding: 50px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+h2 {
+  color: #0d171e;
+}
+
+#h33{
+  color: white;
+}
+
+#owner{
+  color: white;
+  text-decoration: none;
+}
+
+.project-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 0;
+}
+
+.project-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.project-link {
+  text-decoration: none;
+  color: white;
+  display: block;
+  padding: 10px;
+  background-color: #0d2d46;
+  color: white;
+  text-align: center;
+}
+
+.project-description {
+  padding: 10px;
+  font-size: 20px;
+}
+
+.project-description p {
+  margin: 5px 0;
+}
+
+.project-description strong {
+  margin-right: 5px;
+}
+
+
+</style>
+{% endblock %}

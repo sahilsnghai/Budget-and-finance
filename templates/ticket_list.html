@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+  body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+.layout__boxTitle {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.layout__boxTitle a {
+  margin-right: 10px;
+  text-decoration: none;
+  color: #3498db;
+}
+
+.ticket-list-container {
+  max-width: 1400px;
+  width: 100%; /* Increase the max-width as needed */
+  margin: 50px;
+  margin-top: 30px;
+  margin-left: 250px; /* Adjust the margin as needed */
+  padding: 50px; /* Adjust the padding as needed */
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+h2 {
+  color: #0d171e;
+}
+
+.ticket-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjust the minmax values as needed */
+  gap: 20px; /* Adjust the gap between items */
+  padding: 0;
+}
+
+.ticket-item {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ticket-title {
+  text-decoration: none;
+  color: #3498db;
+  display: block;
+  padding: 10px;
+  background-color: #0d2d46;
+  color: #fff;
+  text-align: center;
+}
+
+.ticket-details {
+  padding: 10px;
+}
+
+.ticket-details p {
+  margin: 5px 0;
+}
+
+.ticket-details strong {
+  margin-right: 5px;
+}
+</style>
+
+<div class="layout__boxTitle">
+</div>
+
+<div class="ticket-list-container">
+  <h2>● Task List</h2>
+  <ul class="ticket-items">
+    {% for ticket in tickets %}
+      <li class="ticket-item">
+        <div class="ticket-header">
+          <strong>
+            <a href="{% url 'ticket' ticket.ticketid %}" class="ticket-title">{{ ticket.title }}</a>
+          </strong>
+        </div>
+        <div class="ticket-details">
+          <p><strong>Description:</strong> {{ ticket.description }}</p>
+          <p><strong>Reporter:</strong> {{ ticket.reporter.name }}</p>
+          <p><strong>Assignee:</strong> {{ ticket.assignee.name }}</p>
+          <p><strong>Type:</strong> {{ ticket.type }}</p>
+          <p><strong>Priority:</strong> {{ ticket.priority }}</p>
+          <p><strong>Start Date:</strong> {{ ticket.start_date }}</p>
+          <p><strong>End Date:</strong> {{ ticket.end_date }}</p>
+          <p><strong>Status:</strong> {{ ticket.status }}</p>
+          <p><strong>Project Title:</strong> {{ ticket.project.name }}</p>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}

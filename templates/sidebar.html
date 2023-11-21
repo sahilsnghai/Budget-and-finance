@@ -1,0 +1,48 @@
+<!-- sidebar.html -->
+{% load static %}
+
+<div class="sidebar">
+    <div class="logo">
+        <img src="{% static 'styles/Logo.png' %}" alt="Logo">
+    </div>
+    <ul>
+        <li><a href="{% url 'home' %}">Dashboard</a></li>
+        <li><a href="{% url 'create-project' %}">Create a Project</a></li>
+        <li><a href="{% url 'create-ticket' %}">Create a Task</a></li>
+        <li><a href="{% url 'ticket-list' %}">List of Tasks</a></li>
+        <li><a href="{% url 'projects' %}">List of Projects</a></li>
+    </ul>
+</div>
+<style>
+.sidebar {
+    background-color: #10182f;
+    width: 280px;
+    height: 97%;
+    top: 4px;
+    left: 4px;
+    position: fixed;
+    overflow-x: hidden;
+    padding-top: 20px;
+    border-radius: 10px;
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+    margin-left: 10px;
+    font-size: 18px;
+}
+
+.sidebar a {
+    display: block;
+    padding: 15px;
+    text-decoration: none;
+    color: #fff;
+    transition: background-color 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #2980b9;
+}
+</style>

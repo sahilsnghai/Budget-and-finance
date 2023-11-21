@@ -1,0 +1,7 @@
+env/
+configuration/
+
+template/
+
+__init__.py
+__pycache__

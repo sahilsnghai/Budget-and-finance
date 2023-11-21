@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-container">
+  <div class="ticket-details-header">
+    <h2>{{ ticket.title }}</h2>
+  </div>
+  <div class="container">
+    <div class="left-card">
+      <div class="form-group">
+        <label for="{{ ticket.description.id_for_label }}">Description:</label>
+        {{ ticket.description }}
+      </div>
+    </div>
+    <div class="right-card">
+      <div class="form-group">
+        <label for="{{ ticket.reporter__name.id_for_label }}">Reporter:</label>
+        {{ ticket.reporter__name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ ticket.assignee__name.id_for_label }}">Assignee:</label>
+        {{ ticket.assignee__name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ ticket.type__name.id_for_label }}">Type:</label>
+        {{ ticket.type__name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ ticket.priority__name.id_for_label }}">Priority:</label>
+        {{ ticket.priority__name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ ticket.start_date.id_for_label }}">Start Date:</label>
+        {{ ticket.start_date }}
+      </div>
+      <div class="form-group">
+        <label for="{{ ticket.end_date.id_for_label }}">End Date:</label>
+        {{ ticket.end_date }}
+      </div>
+      <div class="form-group">
+        <label for="{{ ticket.status__name.id_for_label }}">Status:</label>
+        {{ ticket.status__name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ ticket.project__name.id_for_label }}">Project Title:</label>
+        {{ ticket.project__name }}
+      </div>
+
+      {% if request.user.username == ticket.reporter__username %}
+      <a href="{% url 'edit' task='ticket' pk=ticket.ticketid %}"><button class="edit-button">Edit</button></a>
+      <a href="{% url 'delete' task='ticket' pk=ticket.ticketid %}"><button class="delete-button">Delete</button></a>
+      {% endif %}
+    </div>
+    </div>
+  </div>
+</div>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+}
+.form-container{
+  margin-top: 50px;
+  max-width: 1600px; /* Adjust the max-width as needed */
+  width: 90%; /* Fallback width for older browsers or smaller screens */
+  margin-right: 50px;
+}
+
+.container {
+  display: flex;
+  font-size: 20px;
+  height: 850px;
+}
+
+.left-card {
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  border-radius: 8px;
+}
+
+.right-card {
+  padding: 40px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  border-radius: 8px;
+}
+
+.left-card {
+  flex: 4;
+}
+
+.right-card {
+  flex: 2;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input,
+select,
+textarea {
+  width: calc(100% - 10px); /* Adjust the width based on your preference */
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.edit-button,.delete-button {
+  background-color: #0996d7;
+  color: white;
+  padding: 13px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 25px;
+  margin-left: 110px;
+}
+
+.edit-button:hover,.delete-button:hover {
+  background-color: #45a049;
+}
+
+
+</style>
+{% endblock %}

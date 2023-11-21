@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+    {% if not request.user.is_authenticated %}
+    <div class="login-container">
+        <div class="login-form lifted">
+            <img src="../static/styles/lumenore_logo.png" id="lunemore">
+            <h2>Lumenore</h2>
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Login</button>
+            </form>
+            <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+        </div>
+    </div>
+    {% endif %}
+<style>
+    .login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+    .login-form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 100%;
+}
+#lunemore{
+    width: 17%;
+    margin-bottom: -63px;
+    margin-left: 50px;
+}
+    .login-form h2 {
+    text-align: center;
+    color: #333;
+    margin-left: 10px;
+}
+
+    form {
+    display: flex;
+    flex-direction: column;
+}
+
+    label {
+    margin-top: 10px;
+    color: #666;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+ 
+{% block title %}Home Page{% endblock %}
+ 
+{% block content %}
+<div class="home-container">
+    <div class="hero-section">
+        <div class="dashboard-heading">
+            <h2>Welcome to the Dashboard</h2>
+            <p class="hero-subtitle">Explore and manage your tickets and projects with ease.</p>
+        </div>
+        
+        <div id="ticket-table">
+            <h3 id="taskss">TASKS</h3>
+            <div class="table-wrapper">
+            <table>
+                <form method="post" action="{% url 'home' %}">
+                    {% csrf_token %}
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Reporter</th>
+                            <th>Assignee</th>
+                            <th>Type</th>
+                            <th>Priority</th>
+                            <th>ETA</th>
+                            <th>Status</th>
+                            <th>Project</th>
+                            <th> </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+ 
+                        {% for ticket in tickets %}
+                            <tr>
+                                {% if ticketform.instance.ticketid == ticket.ticketid %}
+ 
+                            {% with return_val=ticket.ticketid %}
+ 
+                            {% include 'save_ticket.html' %}
+ 
+                            {% endwith %}
+ 
+                            {% else %}
+ 
+                            <td data-url="{% url 'ticket' ticket.ticketid %}" class="clickable-cell">{{ ticket.title }}
+                            </td>
+                            <td data-url="{% url 'ticket' ticket.ticketid %}" class="clickable-cell">{{ ticket.description }}</td>
+                            <td contenteditable="true" class="editable-cell">{{ ticket.reporter }}</td>
+                            <td>{{ ticket.assignee }}</td>
+                            <td>{{ ticket.type }}</td>
+                            <td>{{ ticket.priority }}</td>
+                            <td>{{ ticket.end_date }}</td>
+                            <td data-url="{% url 'ticket' ticket.ticketid %}" class="clickable-cell status-cell" data-status="{{ ticket.status }}">
+                                {{ ticket.status }}
+                            </td>
+                            <td>{{ ticket.project }}</td>
+                            <td>{{ ticket.actions }}
+                            <button formnovalidate name="edit" id="edit" value="{{ ticket.ticketid }}">Edit</button></td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </form>
+            </table></div>
+        </div>
+    </div>
+</div>
+ 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var clickableCells = document.querySelectorAll('.clickable-cell');
+        var editableCells = document.querySelectorAll('.editable-cell');
+ 
+        clickableCells.forEach(function (cell) {
+            cell.addEventListener('click', function () {
+                var url = this.getAttribute('data-url');
+                window.location.href = url;
+            });
+        });
+ 
+        editableCells.forEach(function (cell) {
+            cell.addEventListener('click', function () {
+                // You can implement your own logic here for editing
+                // For example, open a modal or redirect to an edit page
+                console.log('Editable cell clicked:', this.textContent);
+            });
+        });
+    });
+</script>
+ 
+ 
+{% endblock %}
+ 
