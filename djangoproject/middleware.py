@@ -1,10 +1,10 @@
-from djangoproject.main_logger import set_up_logging
+# from djangoproject.main_logger import set_up_logging
 from djangoproject.constants import Constants
 from django.http import HttpResponse, HttpResponseForbidden
 from requests import get
 import jwt
 
-logger = set_up_logging()
+# logger = set_up_logging()
 constants = Constants()
 
 
@@ -37,7 +37,7 @@ def process_req(req):
             raise HttpResponse("Authentication required", status=401)
         auth = True
     except Exception as e:
-        logger.info(f"Authentication failed due to {e}")
+        print(f"Authentication failed due to {e}")
         auth = False
     return auth
 
@@ -60,11 +60,11 @@ def _token_is_valid(token, req):
         )
         constants.time_zone = req.headers.get("TIMEZONE", "US/Eastern")
         req.context = decoded_token["userVo"]
-        logger.info(decoded_token)
+        print(decoded_token)
         auth = True
 
     except Exception as ex:
-        logger.exception(f"Token could not be validated:\t{ex}")
+        print(f"Token could not be validated:\t{ex}")
         auth = False
     return auth
 
@@ -80,8 +80,8 @@ def get_token(token, version=None):
         headers = {"version": "qa", "Authorization": f"{token[0]} {token[1]}"}
         response = get(url, headers=headers).json()["data"]
         response = f'{token[0]} {response}' or token
-        logger.info(f"{response=}")
+        print(f"{response=}")
     except Exception as e:
-        logger.exception(f"error in getting bigget token {e}")
+        print(f"error in getting bigget token {e}")
         response = token
     return response

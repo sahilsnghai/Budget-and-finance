@@ -10,9 +10,9 @@ from .forms import (
     ProjectForm,
 )
 from django.utils import timezone
-from djangoproject.main_logger import set_up_logging
+# from djangoproject.main_logger import set_up_logging
 
-logger = set_up_logging()
+# logger = set_up_logging()
 
 
 @login_required(login_url="login")
@@ -188,14 +188,14 @@ def login_view(req):
 
     if req.method == "POST":
         form = AuthenticationForm(data=req.POST)
-        logger.info(f"{form.is_valid()=}")
+        # logger.info(f"{form.is_valid()=}")
         if form.is_valid():
             user = form.get_user()
             login(req, user)
             return redirect("home")
     else:
         form = AuthenticationForm()
-        logger.info("not authenticate")
+        # logger.info("not authenticate")
     return render(req, "login.html", {"form": form})
 
 
