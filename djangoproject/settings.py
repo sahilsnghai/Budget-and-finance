@@ -27,15 +27,15 @@ SECRET_KEY = "django-insecure-pkttgz6y#n+v@rv8xpzph9k!a)z#o+kf3aczy$lqsm+f@kcf@-
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-TEMPLATE_DEBUG = True
+
 # LOGIN_URL = 'login'
 
 
-ALLOWED_HOSTS = ['*.lumenore.com']
+ALLOWED_HOSTS = ['.lumenore.com',"*"]
 
 CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com']
 CORS_ALLOWED_ORIGINS = ['https://*.lumenore.com']
-CSRF_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE = True
 
 # Application definition
 
