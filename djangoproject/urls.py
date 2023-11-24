@@ -18,7 +18,6 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('lumenore/path/administrator', admin.site.urls),
     path('apps/', include('taskmanager.urls')),
-
 ]

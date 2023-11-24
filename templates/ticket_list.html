@@ -8,28 +8,18 @@
   font-family: 'Arial', sans-serif;
 }
 
-.layout__boxTitle {
-  display: flex;
-  align-items: center;
-  margin: 10px 0;
-}
-
-.layout__boxTitle a {
-  margin-right: 10px;
-  text-decoration: none;
-  color: #3498db;
-}
 
 .ticket-list-container {
-  max-width: 1400px;
-  width: 100%; /* Increase the max-width as needed */
-  margin: 50px;
-  margin-top: 30px;
-  margin-left: 250px; /* Adjust the margin as needed */
-  padding: 50px; /* Adjust the padding as needed */
+  max-width: 1200px;
+  width: 90%; /* Increase the max-width as needed */
+  margin-top: 50px;
+   /* Adjust the margin as needed */
+  padding: 20px; /* Adjust the padding as needed */
   background-color: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  font-size: 15px;
+  /* position: static; */
 }
 
 h2 {
@@ -82,23 +72,30 @@ h2 {
       <li class="ticket-item">
         <div class="ticket-header">
           <strong>
-            <a href="{% url 'ticket' ticket.ticketid %}" class="ticket-title">{{ ticket.title }}</a>
+            <a href="{% url 'ticket' ticket.tm_task_info.tm_task_info_id %}" class="ticket-title">{{ ticket.tm_task_info.task_title }}</a>
           </strong>
         </div>
         <div class="ticket-details">
-          <p><strong>Description:</strong> {{ ticket.description }}</p>
-          <p><strong>Reporter:</strong> {{ ticket.reporter.name }}</p>
-          <p><strong>Assignee:</strong> {{ ticket.assignee.name }}</p>
-          <p><strong>Type:</strong> {{ ticket.type }}</p>
-          <p><strong>Priority:</strong> {{ ticket.priority }}</p>
-          <p><strong>Start Date:</strong> {{ ticket.start_date }}</p>
-          <p><strong>End Date:</strong> {{ ticket.end_date }}</p>
-          <p><strong>Status:</strong> {{ ticket.status }}</p>
-          <p><strong>Project Title:</strong> {{ ticket.project.name }}</p>
+          <p><strong>Description:</strong> {{ ticket.tm_task_info.task_description }}</p>
+          <p><strong>Reporter:</strong> {{ ticket.tm_task_info.created_by }}</p>
+          <p><strong>Assignee:</strong> {{ ticket.tm_task_info.modified_by }}</p>
+          <p><strong>Type:</strong> {{ ticket.tm_task_type }}</p>
+          <p><strong>Priority:</strong> {{ ticket.tm_priority }}</p>
+          <p><strong>Start Date:</strong> {{ ticket.tm_task_info.start_date }}</p>
+          <p><strong>End Date:</strong> {{ ticket.tm_task_info.end_date }}</p>
+          <p><strong>Status:</strong> {{ ticket.tm_status }}</p>
+          <p><strong>Project Title:</strong> {{ ticket.tm_project }}</p>
         </div>
       </li>
     {% endfor %}
   </ul>
 </div>
+<style>
+  body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  overflow-x: hidden;
+}
+</style>
 
 {% endblock %}

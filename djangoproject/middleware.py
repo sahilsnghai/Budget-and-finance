@@ -1,17 +1,17 @@
-# from djangoproject.main_logger import set_up_logging
+from djangoproject.main_logger import set_up_logging
 from djangoproject.constants import Constants
 from django.http import HttpResponse, HttpResponseForbidden
 from requests import get
 import jwt
 
-# logger = set_up_logging()
+logger = set_up_logging()
 constants = Constants()
 
 
 def task_middleware(get_response):
     def middleware(req):
         
-        print(f"{req.headers=}")
+        logger.info(f"{req.headers=}")
 
         # if process_req(req=req):
         response = get_response(req)

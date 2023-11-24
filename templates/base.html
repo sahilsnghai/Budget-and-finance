@@ -13,17 +13,14 @@
 
 <body>
     {% if request.user.is_authenticated %}
-    <header>
-        <div class="xyz">
-         
-        </div>
+    <div class="header">
         <nav>
             <ul>
                 {% include 'navbar.html' %} <!-- Include the navbar here -->
 
             </ul>
         </nav>
-    </header>
+    </div>
     {% include 'sidebar.html' %}
     {% endif %}
     <main>
@@ -45,6 +42,7 @@
             var dropdownMenu = document.getElementById("dropdownMenu");
             dropdownMenu.style.display = (dropdownMenu.style.display === "block") ? "none" : "block";
         }
+        
     </script>
 </body>
 

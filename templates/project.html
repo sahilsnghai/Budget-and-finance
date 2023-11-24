@@ -3,28 +3,34 @@
 {% block content %}
 <div class="project-details-container">
   <div class="project-details-section">
-    <h2>{{ project.name }}</h2>
-    <h5>{{ project.owner__name }}</h5>
+    <h2>{{ project.project_name }}</h2>
+    <h5>⁓ {{ project.created_by__username }}</h5>
   </div>
   <hr class="divider">
   <div class="project-details-section">
     <h4>Description</h4>
-    <p>{{ project.description }}</p>
+    <p>{{ project.project_description }}</p>
   </div>
 
-  {% if request.user.name == project.owner__name %}
-  <a href="{% url 'edit' task='project' pk=project.ticket_projectid %}"><button class="edit-button">Edit</button></a>
-  <a href="{% url 'delete' task='project' pk=project.ticket_projectid %}"><button class="delete-button">Delete</button></a>
+  {% if request.user.username == project.created_by__username %}
+  <a href="{% url 'edit' task='project' pk=project.tm_project_id %}"><button class="edit-button">Edit</button></a>
+  <a href="{% url 'delete' task='project' pk=project.tm_project_id %}"><button class="delete-button">Delete</button></a>
   {% endif %}
 </div>
 
 
 <style>
+
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  overflow-x: hidden;
+}
   .project-details-container {
   max-width: 600px;
-  width: 100%;
+  width: 80%;
   margin: 20px auto;
-  padding: 20px;
+  padding: 15px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   background-color: #fff;

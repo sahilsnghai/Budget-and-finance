@@ -7,10 +7,10 @@
     <div class="project-list">
       {% for project in projects %}
         <div class="project-card">
-          <a href="{% url 'project' project.ticket_projectid %}" id="owner" class="project-link">
-            <h3 id="h33">{{ project.name }}</h3> owned by {{ project.owner__name }}
+          <a href="{% url 'project' project.tm_project_id %}" id="owner" class="project-link">
+            <h3 id="h33">{{ project.project_name }}</h3> owned by {{ project.created_by__username }}
           </a>
-          <p class="project-description">{{ project.description }}</p>
+          <p class="project-description">{{ project.project_description }}</p>
         </div>
       {% endfor %}
     
@@ -24,15 +24,13 @@ body {
 }
 
 .project-list-container {
-  max-width: 1400px;
+  max-width: 1200px;
   width: 100%;
-  margin: 50px;
-  margin-top: -80px;
-  margin-left: 250px;
-  padding: 50px;
+  padding: 30px;
   background-color: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  font-size: 14px;
 }
 
 h2 {
@@ -46,6 +44,11 @@ h2 {
 #owner{
   color: white;
   text-decoration: none;
+}
+
+#owner:hover {
+  color: white;
+  text-decoration: underline;
 }
 
 .project-list {
@@ -74,7 +77,7 @@ h2 {
 
 .project-description {
   padding: 10px;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .project-description p {

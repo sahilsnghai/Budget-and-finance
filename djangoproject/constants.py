@@ -28,47 +28,51 @@ class Constants(metaclass=ConstantsMeta):
         self.ROOT_DIR = dirname(dirname(abspath(__file__)))
         self.HEADERS = {'content-type': "application/json", 'cache-control': "no-cache", 'version': None}
 
-    # def get_conn_info(self, org=None):
-    #     """
+    def get_conn_info(self, org=None):
+        """
 
-    #     Parameters
-    #     ----------
-    #     org
+        Parameters
+        ----------
+        org
 
-    #     Returns
-    #     -------
+        Returns
+        -------
 
-    #     """
-    #     return {
-    #         "host": self.get_config(org=org, key="host"),
-    #         "port": self.get_config(org=org, key="port"),
-    #         "user": self.get_config(org=org, key="userName"),
-    #         "password": self.get_config(org=org, key="password"),
-    #         "database": self.get_config(org=org, key="schema"),
-    #         "driver": self.get_config(org=org, key="driver")
-    #     }
+        """
+        return {
+            "host": self.get_config(org=org, key="host"),
+            "port": self.get_config(org=org, key="port"),
+            "user": self.get_config(org=org, key="userName"),
+            "password": self.get_config(org=org, key="password"),
+            "database": self.get_config(org=org, key="schema"),
+            "driver": self.get_config(org=org, key="driver")
+        }
 
-    # def get_config(self, org, key):
-    #     """
+    def get_config(self, org, key):
+        """
 
-    #     Parameters
-    #     ----------
-    #     org
-    #     key
+        Parameters
+        ----------
+        org
+        key
 
-    #     Returns
-    #     -------
+        Returns
+        -------
 
-    #     """
-    #     json_filename = self.ROOT_DIR + "/configuration/configuration.json"
-    #     if not path.exists(json_filename):
-    #         json_filename = self.ROOT_DIR + "/configuration/askme-config-map-rsh"
-    #     with open(json_filename, "r") as f:
-    #         try:
-    #             if org == "parameters":
-    #                 return json.load(f)["parameters"][key]
-    #             else:
-    #                 return json.load(f)["dataSources"][org][key]
+        """
+        try:
 
-    #         except KeyError:
-    #             return None
+            json_filename = self.ROOT_DIR + "/configuration/configuration.json"
+            if not path.exists(json_filename):
+                json_filename = self.ROOT_DIR + "/configuration/askme-config-map-rsh"
+            with open(json_filename, "r") as f:
+                try:
+                    if org == "parameters":
+                        return json.load(f)["parameters"][key]
+                    else:
+                        return json.load(f)["dataSources"][org][key]
+
+                except KeyError:
+                    return "local"
+        except:
+            return "Local"

@@ -2,47 +2,119 @@
 {% load static %}
 
 <div class="sidebar">
-    <div class="logo">
-        <img src="{% static 'styles/Logo.png' %}" alt="Logo">
+    <div class="sidebar-header">
+        <img class="normal-image" src="{% static 'images/normal_image.png' %}" alt="Normal Image">
+        <img class="hover-image" src="{% static 'images/hover_image.png' %}" alt="Hover Image">
     </div>
     <ul>
-        <li><a href="{% url 'home' %}">Dashboard</a></li>
-        <li><a href="{% url 'create-project' %}">Create a Project</a></li>
-        <li><a href="{% url 'create-ticket' %}">Create a Task</a></li>
-        <li><a href="{% url 'ticket-list' %}">List of Tasks</a></li>
-        <li><a href="{% url 'projects' %}">List of Projects</a></li>
+        <li>
+            <a href="{% url 'home' %}">
+                <img class="icons1" src="{% static 'images/dashboard_icon.png' %}" alt="Dashboard Icon">
+                Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'create-project' %}">
+                <img class="icons2" src="{% static 'images/create_project_icon.png' %}" alt="Create Project Icon">
+                Create a Project
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'create-ticket' %}">
+                <img class="icons3" src="{% static 'images/create_task_icon.png' %}" alt="Create Task Icon">
+                Create a Task
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'ticket-list' %}">
+                <img class="icons4" src="{% static 'images/list_tasks_icon.png' %}" alt="List of Tasks Icon">
+                List of Tasks
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'projects' %}">
+                <img class="icons5" src="{% static 'images/list_projects_icons.png' %}" alt="List of Projects Icon" id="last_image">
+                List of Projects
+            </a>
+        </li>
     </ul>
 </div>
+
 <style>
 .sidebar {
     background-color: #10182f;
-    width: 280px;
-    height: 97%;
-    top: 4px;
-    left: 4px;
+    width: 60px; /* Initial width */
+    height: 100vh;
+    top: 0;
+    left: 0;
     position: fixed;
     overflow-x: hidden;
     padding-top: 20px;
-    border-radius: 10px;
+    border-radius: 1px;
+    transition: width 0.3s;
+}
+
+.sidebar:hover {
+    width: 225px; /* Expanded width on hover */
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.normal-image {
+    width: 40px;
+    margin-left: 7px; /* Adjust the size of the normal image as needed */
+}
+
+.hover-image {
+    width: 215px;
+    height: 60px;/* Adjust the size of the hover image as needed */
+    border-radius: 5px;
+    display: none;
+}
+
+.sidebar:hover .normal-image {
+    display: none;
+}
+
+.sidebar:hover .hover-image {
+    display: inline;
 }
 
 .sidebar ul {
     list-style-type: none;
     padding: 0;
-    margin-top: 20px;
-    margin-left: 10px;
-    font-size: 18px;
+    margin-left: 4.5px;
+    font-size: 14px;
 }
 
 .sidebar a {
-    display: block;
+    display: flex;
+    align-items: center;
     padding: 15px;
     text-decoration: none;
     color: #fff;
+    margin-left: 10px;
     transition: background-color 0.3s;
+    width: 205px; /* Fixed width for anchor elements */
+    box-sizing: border-box; 
 }
 
 .sidebar a:hover {
     background-color: #2980b9;
+}
+
+.icons1,.icons2,.icons3 {
+    width: 22px; /* Adjust the size of the icons as needed */
+    margin-right: 10px;
+}
+.icons4,.icons5{
+    width: 24px;
+    margin-right: 11px;
+    margin-left: -4px;
 }
 </style>

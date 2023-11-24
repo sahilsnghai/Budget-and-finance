@@ -6,12 +6,14 @@
 body {
   margin: 0;
   font-family: 'Arial', sans-serif;
+  overflow-x: hidden;
 }
 .form-container{
   margin-top: 50px;
-  max-width: 1600px; /* Adjust the max-width as needed */
+  max-width: 1200px; /* Adjust the max-width as needed */
   width: 80%; /* Fallback width for older browsers or smaller screens */
-  margin-right: 50px;
+
+  font-size: 15px;
 }
 
 .container {
@@ -81,7 +83,6 @@ input[type="submit"]:hover {
 </style>
 
 <div class="form-container">
-  {{request.get_full_path}}
   {% if 'edit' in request.get_full_path %}
   <h2>Edit Task</h2>
   {% else %}
@@ -94,57 +95,57 @@ input[type="submit"]:hover {
     <div class="container">
       <div class="left-card">
         <div class="form-group">
-          <label for="{{ form.title.id_for_label }}">Title:</label>
-          {{ form.title }}
+          <label for="{{ form.task_info_form.task_title.id_for_label }}">Title:</label>
+          {{ form.task_info_form.task_title }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.description.id_for_label }}">Description:</label>
-          {{ form.description }}
+          <label for="{{ form.task_info_form.task_description.id_for_label }}">Description:</label>
+          {{ form.task_info_form.task_description }}
         </div>
       </div>
   
       <div class="right-card">
         <div class="form-group">
-          <label for="{{ form.reporter.id_for_label }}">Reporter:</label>
-          {{ form.reporter }}
+          <label for="{{ form.task_info_form.created_by.id_for_label }}">Reporter:</label>
+          {{ form.task_info_form.created_by }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.assignee.id_for_label }}">Assignee:</label>
-          {{ form.assignee }}
+          <label for="{{ form.task_info_form.modified_by.id_for_label }}">Assignee:</label>
+          {{ form.task_info_form.modified_by }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.type.id_for_label }}">Type:</label>
-          {{ form.type }}
+          <label for="{{ form.task_form.tm_task_type.id_for_label }}">Type:</label>
+          {{ form.task_form.tm_task_type }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.priority.id_for_label }}">Priority:</label>
-          {{ form.priority }}
+          <label for="{{ form.task_form.tm_priority.id_for_label }}">Priority:</label>
+          {{ form.task_form.tm_priority }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.start_date.id_for_label }}">Start Date:</label>
-          {{ form.start_date }}
+          <label for="{{ form.task_info_form.start_date.id_for_label }}">Start Date:</label>
+          {{ form.task_info_form.start_date }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.end_date.id_for_label }}">End Date:</label>
-          {{ form.end_date }}
+          <label for="{{ form.task_info_form.end_date.id_for_label }}">End Date:</label>
+          {{ form.task_info_form.end_date }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.status.id_for_label }}">Status:</label>
-          {{ form.status }}
+          <label for="{{ form.task_form.tm_status.id_for_label }}">Status:</label>
+          {{ form.task_form.tm_status }}
         </div>
   
         <div class="form-group">
-          <label for="{{ form.project.id_for_label }}">Project:</label>
-          {{ form.project }}
+          <label for="{{ form.task_form.tm_project.id_for_label }}">Project:</label>
+          {{ form.task_form.tm_project }}
         </div>
-  
+        <input type="hidden" name="tm_user" value="{{ request.user.tm_user_id }}">
         <input type="submit" value="Create Ticket">
       </div>
     </div>

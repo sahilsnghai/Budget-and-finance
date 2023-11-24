@@ -35,10 +35,8 @@ ALLOWED_HOSTS = ['.lumenore.com',"*"]
 
 CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com']
 CORS_ALLOWED_ORIGINS = ['https://*.lumenore.com']
-CSRF_COOKIE_SECURE = True
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -52,6 +50,12 @@ INSTALLED_APPS = [
 ]
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 1800
+
+
+
+LOGGING_CONFIG = None
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -106,7 +110,7 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
-AUTH_USER_MODEL = "taskmanager.UserProfile"
+AUTH_USER_MODEL = "taskmanager.TmUser"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
