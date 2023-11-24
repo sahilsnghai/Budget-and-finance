@@ -32,8 +32,8 @@ def update(req, task, pk):
             )
             username = {
                 tm_task.tm_user.username,
-                task_info.modified_by.get_username,
-                task_info.created_by.get_username, 
+                task_info.modified_by.get_username(),
+                task_info.created_by.get_username(), 
             }
             logger.info("getting from instance ")
             task_form = TmTaskForm(instance=tm_task)
@@ -49,7 +49,8 @@ def update(req, task, pk):
             form = {"project_form": project_form}
             id = project_form
             logger.info("got the project form")
-
+    
+    logger.info(f"username {username}")
     if req.user.username not in username:
         logger.info(f"{req.user.username} is not Authorize ")
         return redirect("ticket-list")
