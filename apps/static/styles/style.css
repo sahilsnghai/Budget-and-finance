@@ -566,6 +566,7 @@ tr {
 td:nth-child(1):hover {
     background-color: #eeededb4;
     text-decoration: underline;
+    cursor: pointer;
 }
 
 td {
@@ -573,7 +574,6 @@ td {
     border-right: none;
     border-bottom: 1px solid #ddd;
     padding: 8px;
-    cursor: pointer;
     text-align: left;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
