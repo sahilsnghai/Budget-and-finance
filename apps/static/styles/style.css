@@ -566,7 +566,6 @@ tr {
 td:nth-child(1):hover {
     background-color: #eeededb4;
     text-decoration: underline;
-    font-weight: 600;
 }
 
 td {
