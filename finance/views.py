@@ -5,7 +5,7 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from rest_framework.views import APIView
-from .utils import create_response, get_connection
+from .utils import create_response
 from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
 from threading import Thread
