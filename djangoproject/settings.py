@@ -11,9 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-# from .constants import Constants
+from .constants import Constants
 
-# connection = Constants().get_conn_info("ccplatform")
+# connection = Constants().get_conn_info("taskmanager")
+
+# print(f"{connection=}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +49,9 @@ INSTALLED_APPS = [
 
     "taskmanager.apps.TaskmanagerConfig",
     "livesync",
+
+    'finance.apps.FinanceConfig',
+    'rest_framework',
 ]
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
@@ -54,6 +59,14 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 1800
 
 
+
+REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+}
 
 LOGGING_CONFIG = None
 
@@ -146,6 +159,9 @@ USE_TZ = True
 STATIC_URL = 'apps/static/'
 
 STATICFILES_DIRS = [BASE_DIR / "apps/static"]
+
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = 'apps/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

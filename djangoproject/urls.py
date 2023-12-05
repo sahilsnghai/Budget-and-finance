@@ -19,5 +19,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('lumenore/path/administrator', admin.site.urls),
-    path('apps/', include('taskmanager.urls')),
+    path('apps/task/', include('taskmanager.urls')),
+    path('apps/finance/', include('finance.urls')),
 ]

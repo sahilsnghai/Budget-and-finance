@@ -22,8 +22,8 @@ class Constants(metaclass=ConstantsMeta):
     def __init__(self):
 
         self.time_zone = 'US/Eastern'  # timezone for date formatting
-        self.STATUS200 = {'version': {'pointer': "2.0", "name": "AskMe Engine"},
-                          "status": {"code": None, "value": None},
+        self.STATUS200 = {'version': {'pointer': "2.0", "name": "Finance app"},
+                          "status": {"code": None},
                           "data": None, 'error': None}
         self.ROOT_DIR = dirname(dirname(abspath(__file__)))
         self.HEADERS = {'content-type': "application/json", 'cache-control': "no-cache", 'version': None}
