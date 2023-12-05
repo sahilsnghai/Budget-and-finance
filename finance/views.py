@@ -26,8 +26,13 @@ class CreateHierarchy(APIView):
     def post(self, req, format=None):
         try:
             file = req.FILES["file"]
-        except:
-            file = req.data["file"]
+        except Exception as e:
+            try:
+                print(f"error {e}")
+                file = req.data["file"]
+            except Exception as e:
+                return Response({"Key Error": "key 'file' not found"}, status=HTTP_400_BAD_REQUEST)
+
         data = None
         try:
             data = self.create_hierarchy(file)
