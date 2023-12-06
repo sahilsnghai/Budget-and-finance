@@ -10,7 +10,7 @@ from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
 from threading import Thread
 from json import loads
-from .utils import create_form, create_user_data
+# from .utils import create_form, create_user_data
 import pandas as pd
 from time import perf_counter
 
