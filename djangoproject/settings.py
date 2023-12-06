@@ -36,7 +36,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['.lumenore.com',"*"]
 
 CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com']
-CORS_ALLOWED_ORIGINS = ['https://*.lumenore.com']
+CORS_ALLOWED_ORIGINS = ['https://*.lumenore.com', "*"]
 
 # Application definition
 INSTALLED_APPS = [
