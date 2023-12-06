@@ -16,9 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from .constants import Constants
+
+contants = Constants()
 
 urlpatterns = [
     path('lumenore/path/administrator', admin.site.urls),
-    path('apps/task/', include('taskmanager.urls')),
-    path('apps/finance/', include('finance.urls')),
 ]
+
+if contants.get_config("parameters","taskmanager"):
+    urlpatterns.append( path('apps/task/', include('taskmanager.urls')))
+
+if contants.get_config("parameters","financeApp"):
+    urlpatterns.append(path('apps/finance/', include('finance.urls')))
