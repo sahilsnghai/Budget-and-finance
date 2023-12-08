@@ -116,6 +116,15 @@ DATABASES = {
         # "HOST": connection.get("host"),
         # "PORT": connection.get("port"),
         # "PASSWORD": connection.get("password")
+    },
+    "financeApp":{
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "finance_apps",
+        "USER": "u_ssjain",
+        "HOST": "10.199.1.196",
+        "PORT": "3306",
+        "PASSWORD": "mBNtj}MRnDCb.7<k(LmG"
+
     }
 }
 
