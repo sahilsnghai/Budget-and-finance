@@ -10,7 +10,14 @@ from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
 from threading import Thread
 from json import loads
-from .database.get_data import create_form, create_user_data, fetch_from, fetch_scenario
+from .database.get_data import (
+    create_form,
+    create_user_data,
+    fetch_from,
+    fetch_scenario,
+    get_user_data,
+    filter_column
+)
 from time import perf_counter
 from pathlib import Path
 import pandas as pd
@@ -20,6 +27,17 @@ constants = Constants()
 logger = set_up_logging()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+COLUMNS = {
+    "Date": "date",
+    "Receipt Number": "receipt_number",
+    "Business Unit": "business_unit",
+    "Account Type": "account_type",
+    "Account SubType": "account_subtype",
+    "Project Name": "project_name",
+    "Amount Type": "amount_type",
+    "Amount": "amount",
+}
 
 
 class CreateHierarchy(APIView):
@@ -55,22 +73,18 @@ class CreateHierarchy(APIView):
     def save_matrix(df, filename, **kwargs):
         try:
             formid = create_form(filename, kwargs.get("userid"), kwargs.get("orgid"))
+            logger.info(f"{df.columns}")
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
                 df = df.rename(
-                    columns={
-                        "Date": "date",
-                        "Receipt Number": "receipt_number",
-                        "Business Unit": "business_unit",
-                        "Account Type": "account_type",
-                        "Account SubType": "account_subtype",
-                        "Project Name": "project_name",
-                        "Amount Type": "amount_type",
-                        "Amount": "amount",
-                    }
-                )
+                    columns=COLUMNS)
                 df["fn_form_id"] = formid
-                df = df[[df.columns[-1]] + list(df.columns[:-1])]
+                df["amount_type"] = df["amount_type"].replace(
+                    {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0}
+                )
+                df["created_by"] = df["modified_by"] = kwargs.get("userid")
+                logger.info(f"{len(df)}")
+
                 create_user_data(df, formid)
             else:
                 logger.info(f"Could not create form wih id -> {formid}")
@@ -123,11 +137,10 @@ class CreateHierarchy(APIView):
         }
         """
         start = perf_counter()
-        filename = kwargs.pop("filename", None)
         Thread(
             target=CreateHierarchy.save_matrix,
             daemon=True,
-            args=[df, filename],
+            args=[df, kwargs.pop("filename", None)],
             kwargs=kwargs,
         ).start()
         logger.info(f"time by read excel {perf_counter() - start}")
@@ -143,8 +156,8 @@ class CreateHierarchy(APIView):
 
         months = df["date_str"].unique().tolist()
         df = df.drop(columns="date_str")
-        columns = df.columns[1:-1].to_list() + months
-        row_names = loads(df[df.columns[1:]].to_json(orient="records"))
+        columns = df.columns[:-1].to_list() + months
+        row_names = loads(df[df.columns[:]].to_json(orient="records"))
         logger.info(f"time by months, rows and columns {perf_counter() - start}")
 
         for item in row_names:
@@ -162,7 +175,7 @@ class AlterData(APIView):
     def post(self, req, format=None):
         datalist = req.data["data"]
         logger.info(f"{BASE_DIR}/Customer Input Template.xlsx")
-        df = pd.read_excel(f"{BASE_DIR}/Customer Input Template.xlsx" )
+        df = pd.read_excel(f"{BASE_DIR}/Customer Input Template.xlsx")
         modified_dfs = []
         try:
             for data in datalist:
@@ -243,9 +256,56 @@ class FetchScenario(APIView):
 
 class GetData(APIView):
     def post(self, req, format=None):
+        data = {}
         try:
-            userid = req.POST.get("userid")
-            orgid = req.POST.get("organizationId")
-
+            logger.info(f"{req.data=}")
+            formid = req.data["data"]["formid"]
+            userid = req.data["data"]["userid"]
+            start = perf_counter()
+            data = get_user_data(formid=formid, userid=userid)
+            logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start} ")
+            df = pd.DataFrame(data)
+            df["amount_type"] = df["amount_type"].map({1: "Actual", 0: "Projected"})
+            columns = {value : key for key, value in COLUMNS.items()}
+            df = df.rename(columns=columns)
+            data = loads(df.to_json(orient="records"))
+            logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
+            meta = {}
         except Exception as e:
-            pass
+            logger.exception(f"exception while fetching form names:  {e}")
+            meta = {
+                "Error": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=HTTP_200_OK)
+    
+
+class filterColumn(APIView):
+    def post(self, req, format=None):
+        data = {}
+        try:
+            logger.info(f"{req.data=}")
+            formid = req.data["data"]["formid"]
+            userid = req.data["data"]["userid"]
+            unit_value = req.data["data"]["unit"]
+            start = perf_counter()
+            data = filter_column(formid=formid, userid=userid,value=unit_value)
+            logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
+            df = pd.DataFrame(data)
+            df["amount_type"] = df["amount_type"].map({1: "Actual", 0: "Projected"})
+            columns = {value : key for key, value in COLUMNS.items()}
+            df = df.rename(columns=columns)
+            data = loads(df.to_json(orient="records"))
+            logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
+            meta = {}
+        except Exception as e:
+            logger.exception(f"exception while fetching form names:  {e}")
+            meta = {
+                "Error": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=HTTP_200_OK)

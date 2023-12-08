@@ -22,7 +22,7 @@ class FnUserData(Base):
     __tablename__ = 'fn_user_data'
 
     fn_user_data_id = Column(Integer, primary_key=True, autoincrement=True)
-    fn_form_id = Column(Integer, ForeignKey('fn_form.fn_form_id'), nullable=False)
+    fn_form_id = Column(Integer, ForeignKey('fn_form.fn_form_id'))
     date = Column(TIMESTAMP, server_default=func.now())
     receipt_number = Column(String(255))
     business_unit = Column(String(255))
@@ -30,12 +30,12 @@ class FnUserData(Base):
     account_subtype = Column(String(255))
     project_name = Column(String(255))
     amount_type = Column(String(255))
-    amount = Column(Float, nullable=False)
-    created_by = Column(Integer, nullable=False)
-    modified_by = Column(Integer, nullable=False)
+    amount = Column(Float)
+    created_by = Column(Integer)
+    modified_by = Column(Integer)
     created_on = Column(TIMESTAMP, server_default=func.now())
     modified_on = Column(TIMESTAMP, server_default=func.now(), server_onupdate=func.now())
-    is_active = Column(Boolean, nullable=False, default=True)
+    is_active = Column(Boolean, default=True)
 
     form = relationship("FnForm", backref="user_data")
 
