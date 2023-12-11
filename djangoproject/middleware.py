@@ -11,7 +11,7 @@ constants = Constants()
 def task_middleware(get_response):
     def middleware(req):
         
-        logger.info(f"{req.headers=}\n")
+        logger.info(f"\n\n{req.headers=}\n\n")
 
         # if process_req(req=req):
         response = get_response(req)

@@ -72,7 +72,6 @@ class FnScenarioData(Base):
     change_value = Column(Integer, nullable=False)
     created_by = Column(Integer, nullable=False)
     modified_by = Column(Integer, nullable=False)
-    change_type = Column(String(255), default=None)
     created_on = Column(TIMESTAMP, server_default=func.now())
     modified_on = Column(TIMESTAMP, server_default=func.now(),server_onupdate=func.now())
     is_active = Column(Boolean, nullable=False, default=True)

@@ -58,7 +58,7 @@ def create_user_data(df, formid):
             logger.info(f" aafter session2 {len(data)}")
             session.bulk_insert_mappings(FnUserData, data)
             session.commit()
-            logger.info(f"User data saved with ID: ")
+            logger.info(f"User data saved with ID: {formid} ")
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error saving user form data: {e}")
@@ -79,11 +79,10 @@ def fetch_from(userid, orgid):
                 .filter(FnForm.lum_user_id == userid, FnForm.lum_org_id == orgid)
                 .all()
             )
-            logger.info(f"{form_names=}")
             form_names = {
                 form_name.fn_form_id: form_name.form_name for form_name in form_names
             }
-            logger.info(f"Form_name for user {userid} : {form_names}")
+            logger.info(f"Form_name for user {userid}")
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error fetching form: {e}")
@@ -182,3 +181,49 @@ def filter_column(formid, userid, value):
     finally:
         session.close()
     return user_data
+
+
+def create_scenario(scenario_name, scenario_decription, formid, userid):
+    try:
+        logger.info(f"creating form")
+        with Session() as session:
+            scenario_instance = FnScenario(
+                fn_form_id=formid,
+                scenario_name=scenario_name,
+                scenario_description=scenario_decription,
+                created_by = userid,
+                modified_by = userid
+            )
+            session.add(scenario_instance)
+            session.commit()
+            logger.info(f"scenario saved with ID: {scenario_instance.fn_scenario_id}")
+            scenarioid = scenario_instance.fn_scenario_id
+    except SQLAlchemyError as e:
+        logger.exception(f"Error saving form: {e}")
+    except Exception as e:
+        logger.exception(f"Error in SQL: {e}")
+    finally:
+        session.close()
+    return scenarioid
+
+def create_user_data_scenario(df, scenarioid):
+    save = False
+    try:
+        logger.info(f"Updating user data")
+        with Session() as session:
+            data = df.to_dict(orient="records")
+            start = perf_counter()
+            session.bulk_insert_mappings(FnScenarioData, data)
+            session.commit()
+            logger.info(f"time taken by save scenario is {perf_counter() - start}")
+            logger.info(f"User data saved with ID: {scenarioid}")
+            save = True
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.exception(f"Error saving user form data: {e}")
+    except Exception as e:
+        session.rollback()
+        logger.exception(f"Error in SQL: {e}")
+    finally:
+        session.close()
+    return {"save" : save}

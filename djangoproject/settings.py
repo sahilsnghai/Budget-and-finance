@@ -13,9 +13,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from .constants import Constants
 
-# connection = Constants().get_conn_info("taskmanager")
+constant = Constants()
 
-# print(f"{connection=}")
+financeApp = constant.get_conn_info('financeApp')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -118,12 +118,12 @@ DATABASES = {
         # "PASSWORD": connection.get("password")
     },
     "financeApp":{
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "finance_apps",
-        "USER": "u_ssjain",
-        "HOST": "10.199.1.196",
-        "PORT": "3306",
-        "PASSWORD": "mBNtj}MRnDCb.7<k(LmG"
+        "ENGINE": financeApp.get("driver"),
+        "NAME": financeApp.get("database"),
+        "USER": financeApp.get("user"),
+        "HOST": financeApp.get("host"),
+        "PORT": financeApp.get("port"),
+        "PASSWORD": financeApp.get("password")
 
     }
 }

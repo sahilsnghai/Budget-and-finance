@@ -5,7 +5,7 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from rest_framework.views import APIView
-from .utils import create_response
+from .utils import create_response, data_formatter, COLUMNS, format_df, alter_data, alter_data_df
 from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
 from threading import Thread
@@ -16,7 +16,9 @@ from .database.get_data import (
     fetch_from,
     fetch_scenario,
     get_user_data,
-    filter_column
+    filter_column,
+    create_scenario,
+    create_user_data_scenario,
 )
 from time import perf_counter
 from pathlib import Path
@@ -27,17 +29,6 @@ constants = Constants()
 logger = set_up_logging()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-COLUMNS = {
-    "Date": "date",
-    "Receipt Number": "receipt_number",
-    "Business Unit": "business_unit",
-    "Account Type": "account_type",
-    "Account SubType": "account_subtype",
-    "Project Name": "project_name",
-    "Amount Type": "amount_type",
-    "Amount": "amount",
-}
 
 
 class CreateHierarchy(APIView):
@@ -76,15 +67,7 @@ class CreateHierarchy(APIView):
             logger.info(f"{df.columns}")
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
-                df = df.rename(
-                    columns=COLUMNS)
-                df["fn_form_id"] = formid
-                df["amount_type"] = df["amount_type"].replace(
-                    {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0}
-                )
-                df["created_by"] = df["modified_by"] = kwargs.get("userid")
-                logger.info(f"{len(df)}")
-
+                df = format_df(df, formid=formid, userid=kwargs.get("userid"))
                 create_user_data(df, formid)
             else:
                 logger.info(f"Could not create form wih id -> {formid}")
@@ -173,22 +156,16 @@ class CreateHierarchy(APIView):
 
 class AlterData(APIView):
     def post(self, req, format=None):
-        datalist = req.data["data"]
-        logger.info(f"{BASE_DIR}/Customer Input Template.xlsx")
-        df = pd.read_excel(f"{BASE_DIR}/Customer Input Template.xlsx")
-        modified_dfs = []
+        data = req.data["data"]
+        datalist = data["datalist"]
+        userid= data["userid"]
+        formid= data["formid"]
+        dataframe = get_user_data(userid=userid, formid=formid)
+        df = data_formatter(dataframe, False)
+        
         try:
-            for data in datalist:
-                columns_to_group = data["columns"]
-                rows_to_increase = tuple(data["rows"])
-                change_percentage = data["changePrecentage"] / 100 + 1
-
-                grouped_df = df.groupby(columns_to_group)
-                selected_group = grouped_df.get_group(rows_to_increase)
-                amount_column = df.columns[-1]
-                df[amount_column].iloc[selected_group.index] *= change_percentage
-                modified_dfs.append(selected_group)
-
+            modified_dfs = alter_data(df,datalist=datalist)
+            logger.info(f"Calculation done")
             result_df = pd.concat(modified_dfs, ignore_index=True)
             data = loads(result_df.iloc[:, 2:].to_json(orient="records"))
         except Exception as e:
@@ -200,21 +177,39 @@ class AlterData(APIView):
 class SavesScenario(APIView):
     def post(self, req, format=None):
         data = req.data["data"]
+        scenario_name = data["scenario_name"]
+        userid = data["userid"]
+        scenario_decription = data["scenario_decription"]
+        formid = data["formid"]
+        datalist = data["datalist"]
         try:
-            pass
+            start= perf_counter()
+            scenarioid = create_scenario(scenario_name, scenario_decription, formid, userid)
+            dataframe = get_user_data(formid=formid, userid=userid)
+            logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
+            df = data_formatter(dataframe, False)
+            df = alter_data_df(df, scenarioid, datalist=datalist)
+            df = format_df(df, scenarioid=scenarioid,userid=userid)
+            logger.info(f"time taken while alterations {perf_counter() - start}")
+
+
+            data = create_user_data_scenario(df, scenarioid=scenarioid)
+            logger.info(f"time taken saving complete data with change  {perf_counter() - start}")
+            logger.info(f"{scenarioid=}")
+            meta ={}
         except Exception as e:
-            logger.info(f"Exception in creating hierarchy -> {e}")
-
+            logger.info(f"Exception in saving Scenario -> {e}")
+            meta = {
+                "Error": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        create_response(data,**meta)
         return Response(constants.STATUS200, status=HTTP_200_OK)
-
-    @staticmethod
-    def save_scenario(data):
-        return {"save": "done"}
 
 
 class FetchFrom(APIView):
     def post(self, req, format=None):
-        form_names = []
         data = None
         try:
             logger.info(f"{req.data}")
@@ -231,7 +226,6 @@ class FetchFrom(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        print(constants.STATUS200)
         return Response(constants.STATUS200, status=HTTP_200_OK)
 
 
@@ -264,11 +258,7 @@ class GetData(APIView):
             start = perf_counter()
             data = get_user_data(formid=formid, userid=userid)
             logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start} ")
-            df = pd.DataFrame(data)
-            df["amount_type"] = df["amount_type"].map({1: "Actual", 0: "Projected"})
-            columns = {value : key for key, value in COLUMNS.items()}
-            df = df.rename(columns=columns)
-            data = loads(df.to_json(orient="records"))
+            data = data_formatter(data)
             logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
             meta = {}
         except Exception as e:
@@ -293,11 +283,7 @@ class filterColumn(APIView):
             start = perf_counter()
             data = filter_column(formid=formid, userid=userid,value=unit_value)
             logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
-            df = pd.DataFrame(data)
-            df["amount_type"] = df["amount_type"].map({1: "Actual", 0: "Projected"})
-            columns = {value : key for key, value in COLUMNS.items()}
-            df = df.rename(columns=columns)
-            data = loads(df.to_json(orient="records"))
+            data = data_formatter(data)
             logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
             meta = {}
         except Exception as e:
