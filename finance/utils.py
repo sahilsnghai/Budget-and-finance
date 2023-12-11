@@ -50,7 +50,6 @@ def format_df(df,*args, **kwargs):
         logger.info(f"working on {scenarioid}")
         df["fn_scenario_id"] = scenarioid
         df["created_by"] = df["modified_by"] = kwargs.get("userid",None)
-        df["change_value"].fillna(1, inplace=True)
     
     logger.info(f"{len(df)}")
 
@@ -73,15 +72,16 @@ def alter_data(df, datalist):
     return modified_dfs
 
 
-def alter_data_df(df,scenarioid, datalist):    
+def alter_data_df(df, scenarioid, datalist):    
     for data in datalist:
         columns_to_group = data["columns"]
         rows_to_increase = tuple(data["rows"])
-        change_percentage = (data["changePrecentage"] / 100 + 1) * 1
+        change_percentage = data["changePrecentage"] / 100 + 1
         grouped_df = df.groupby(columns_to_group)
         selected_group = grouped_df.get_group(rows_to_increase)
 
         amount_column = df.columns[-1]
         df.loc[selected_group.index, "change_value"] = change_percentage
         df.loc[selected_group.index, amount_column] *= change_percentage
+    df["change_value"].fillna(1, inplace=True)
     return df

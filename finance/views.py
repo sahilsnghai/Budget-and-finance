@@ -199,6 +199,7 @@ class SavesScenario(APIView):
             meta ={}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")
+            data = None
             meta = {
                 "Error": str(e),
                 "error": True,
