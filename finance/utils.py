@@ -28,6 +28,7 @@ def create_response(data, code =HTTP_200_OK, error=False, **kwags):
 
 def data_formatter(data, load=True):
     df = pd.DataFrame(data)
+    print(data[0])
     df["amount_type"] = df["amount_type"].map({1: "Actual", 0: "Projected"})
     columns = {value : key for key, value in COLUMNS.items()}
     df = df.rename(columns=columns)

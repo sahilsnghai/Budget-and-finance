@@ -77,7 +77,7 @@ def fetch_from(userid, orgid):
             form_names = (
                 session.query(FnForm.form_name, FnForm.fn_form_id)
                 .filter(FnForm.lum_user_id == userid, FnForm.lum_org_id == orgid,
-                        FnForm.is_active == 1)
+                        FnForm.is_active == True)
                 .all()
             )
             form_names = {
@@ -136,7 +136,9 @@ def get_user_data(formid, userid):
                     FnUserData.amount_type,
                     FnUserData.amount,
                 )
-                .filter(FnUserData.fn_form_id == formid, FnUserData.created_by == userid, FnUserData.is_active == 1)
+                .filter(FnUserData.fn_form_id == formid, 
+                        FnUserData.created_by == userid, 
+                        FnUserData.is_active == True)
                 .all()
             )
             user_data = [row._asdict() for row in user_sql]
@@ -169,9 +171,11 @@ def filter_column(formid, userid, value):
                     FnUserData.amount_type,
                     FnUserData.amount,
                 )
-                .filter(FnUserData.fn_form_id == formid, FnUserData.created_by == userid,
-                        FnUserData.business_unit == value, FnUserData==1)
-                .all()
+                .filter(
+                    FnUserData.fn_form_id == formid, 
+                    FnUserData.created_by == userid,
+                    FnUserData.business_unit == value, 
+                    FnUserData.is_active == True)
             )
             user_data = [row._asdict() for row in user_sql]
             logger.info(f"got user data for  {len(user_data)} time took {perf_counter() - start}")
