@@ -76,7 +76,8 @@ def fetch_from(userid, orgid):
         with Session() as session:
             form_names = (
                 session.query(FnForm.form_name, FnForm.fn_form_id)
-                .filter(FnForm.lum_user_id == userid, FnForm.lum_org_id == orgid)
+                .filter(FnForm.lum_user_id == userid, FnForm.lum_org_id == orgid,
+                        FnForm.is_active == 1)
                 .all()
             )
             form_names = {
@@ -94,18 +95,20 @@ def fetch_from(userid, orgid):
     return form_names
 
 
-def fetch_scenario(formid):
-    scenario_name = None
+def fetch_scenario(formid, userid):
+    scenario_names = {}
     try:
-        logger.info(f"fetch scenario for form id {formid}")
+        logger.info(f"fetch scenario for form id {formid} {userid}")
         with Session() as session:
             scenario_names = (
-                session.query(FnScenario.scenario_name)
-                .filter(FnScenario.fn_form_id == formid)
-                .all()
+                session.query(FnScenario.fn_scenario_id, FnScenario.scenario_name)
+                .filter(FnScenario.fn_form_id == formid, 
+                        FnScenario.created_by == userid ,
+                        FnScenario.is_active == 1).all()
             )
-            scenario_names = [scenario.form_name for scenario in scenario_names]
-            logger.info(f"scenario_name for formid {formid} : {scenario_name}")
+            
+            scenario_names = {scenario.fn_scenario_id :scenario.scenario_name for scenario in scenario_names}
+            logger.info(f"scenario_name for formid {formid} : {scenario_names}")
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error fetching scenario form: {e}")
@@ -133,7 +136,7 @@ def get_user_data(formid, userid):
                     FnUserData.amount_type,
                     FnUserData.amount,
                 )
-                .filter(FnUserData.fn_form_id == formid, FnUserData.created_by == userid)
+                .filter(FnUserData.fn_form_id == formid, FnUserData.created_by == userid, FnUserData.is_active == 1)
                 .all()
             )
             user_data = [row._asdict() for row in user_sql]
@@ -167,7 +170,7 @@ def filter_column(formid, userid, value):
                     FnUserData.amount,
                 )
                 .filter(FnUserData.fn_form_id == formid, FnUserData.created_by == userid,
-                        FnUserData.business_unit == value)
+                        FnUserData.business_unit == value, FnUserData==1)
                 .all()
             )
             user_data = [row._asdict() for row in user_sql]
@@ -184,20 +187,24 @@ def filter_column(formid, userid, value):
 
 
 def create_scenario(scenario_name, scenario_decription, formid, userid):
+    scenarioid = None
     try:
         logger.info(f"creating form")
-        with Session() as session:
-            scenario_instance = FnScenario(
-                fn_form_id=formid,
-                scenario_name=scenario_name,
-                scenario_description=scenario_decription,
-                created_by = userid,
-                modified_by = userid
-            )
-            session.add(scenario_instance)
-            session.commit()
-            logger.info(f"scenario saved with ID: {scenario_instance.fn_scenario_id}")
-            scenarioid = scenario_instance.fn_scenario_id
+        if not scenario_name in fetch_scenario(formid=formid, userid=userid).values():
+            with Session() as session:
+                scenario_instance = FnScenario(
+                    fn_form_id=formid,
+                    scenario_name=scenario_name,
+                    scenario_description=scenario_decription,
+                    created_by = userid,
+                    modified_by = userid
+                )
+                session.add(scenario_instance)
+                session.commit()
+                logger.info(f"scenario saved with ID: {scenario_instance.fn_scenario_id}")
+                scenarioid = scenario_instance.fn_scenario_id
+        else:
+            logger.info(f"found similar. scenario_name for {userid}")
     except SQLAlchemyError as e:
         logger.exception(f"Error saving form: {e}")
     except Exception as e:
@@ -226,4 +233,4 @@ def create_user_data_scenario(df, scenarioid):
         logger.exception(f"Error in SQL: {e}")
     finally:
         session.close()
-    return {"save" : save}
+    return 

@@ -170,6 +170,7 @@ class AlterData(APIView):
             data = loads(result_df.iloc[:, 2:].to_json(orient="records"))
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
+            data = None
         create_response(data)
         return Response(constants.STATUS200, status=HTTP_200_OK)
 
@@ -196,6 +197,7 @@ class SavesScenario(APIView):
             data = create_user_data_scenario(df, scenarioid=scenarioid)
             logger.info(f"time taken saving complete data with change  {perf_counter() - start}")
             logger.info(f"{scenarioid=}")
+            data = {"scenarioid":scenarioid}
             meta ={}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")
@@ -235,13 +237,15 @@ class FetchScenario(APIView):
         scenario_names = []
 
         try:
-            fnformid = req.POST.get("fnformid")
-            scenario_names = fetch_scenario(fnformid=fnformid)
-            data, meta = {"data": scenario_names}, {}
+            formid = req.data["data"]["formid"]
+            userid = req.data["data"]["userid"]
+            scenario_names = fetch_scenario(formid=formid,userid=userid)
+            data, meta =  scenario_names, {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
+            data = None
             meta = {
-                "Error": str(e),
+                "error": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }

@@ -16,6 +16,7 @@ from .constants import Constants
 constant = Constants()
 
 financeApp = constant.get_conn_info('financeApp')
+print(financeApp)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
