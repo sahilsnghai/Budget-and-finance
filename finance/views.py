@@ -5,7 +5,7 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from rest_framework.views import APIView
-from .utils import create_response, data_formatter, COLUMNS, format_df, alter_data, alter_data_df
+from .utils import create_response, data_formatter, format_df, alter_data, alter_data_df
 from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
 from threading import Thread
@@ -19,6 +19,8 @@ from .database.get_data import (
     filter_column,
     create_scenario,
     create_user_data_scenario,
+    get_user_scenario,
+    Session
 )
 from time import perf_counter
 from pathlib import Path
@@ -64,7 +66,6 @@ class CreateHierarchy(APIView):
     def save_matrix(df, filename, **kwargs):
         try:
             formid = create_form(filename, kwargs.get("userid"), kwargs.get("orgid"))
-            logger.info(f"{df.columns}")
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
                 df = format_df(df, formid=formid, userid=kwargs.get("userid"))
@@ -167,11 +168,16 @@ class AlterData(APIView):
             modified_dfs = alter_data(df,datalist=datalist)
             logger.info(f"Calculation done")
             result_df = pd.concat(modified_dfs, ignore_index=True)
-            data = loads(result_df.iloc[:, 2:].to_json(orient="records"))
+            data, meta= loads(result_df.iloc[:, 2:].to_json(orient="records")),{}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
+            meta = {
+                "Error": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
             data = None
-        create_response(data)
+        create_response(data, **meta)
         return Response(constants.STATUS200, status=HTTP_200_OK)
 
 
@@ -184,21 +190,20 @@ class SavesScenario(APIView):
         formid = data["formid"]
         datalist = data["datalist"]
         try:
-            start= perf_counter()
-            scenarioid = create_scenario(scenario_name, scenario_decription, formid, userid)
-            dataframe = get_user_data(formid=formid, userid=userid)
-            logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
-            df = data_formatter(dataframe, False)
-            df = alter_data_df(df, scenarioid, datalist=datalist)
-            df = format_df(df, scenarioid=scenarioid,userid=userid)
-            logger.info(f"time taken while alterations {perf_counter() - start}")
-
-
-            data = create_user_data_scenario(df, scenarioid=scenarioid)
-            logger.info(f"time taken saving complete data with change  {perf_counter() - start}")
-            logger.info(f"{scenarioid=}")
-            data = {"scenarioid":scenarioid}
-            meta ={}
+            with Session() as session:
+                start= perf_counter()
+                scenarioid = create_scenario(scenario_name, scenario_decription, formid, userid, session)
+                dataframe = get_user_data(formid=formid, userid=userid, session=session)
+                logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
+                df = data_formatter(dataframe, False)
+                df = alter_data_df(df, scenarioid, datalist=datalist)
+                df = format_df(df, scenarioid=scenarioid,userid=userid)
+                logger.info(f"time taken while alterations {perf_counter() - start}")
+                data = create_user_data_scenario(df, scenarioid=scenarioid, session=session)
+                logger.info(f"time taken saving complete data with change  {perf_counter() - start}")
+                logger.info(f"{scenarioid=}")
+                data = {"scenarioid":scenarioid}
+                meta ={}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")
             data = None
@@ -287,6 +292,30 @@ class filterColumn(APIView):
             unit_value = req.data["data"]["unit"]
             start = perf_counter()
             data = filter_column(formid=formid, userid=userid,value=unit_value)
+            logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
+            data = data_formatter(data)
+            logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
+            meta = {}
+        except Exception as e:
+            logger.exception(f"exception while fetching form names:  {e}")
+            meta = {
+                "Error": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=HTTP_200_OK)
+
+
+class GetScenario(APIView):
+    def post(self, req, format=None):
+        data = {}
+        try:
+            logger.info(f"{req.data=}")
+            userid = req.data["data"]["userid"]
+            scenarioid = req.data["data"]["scenarioid"]
+            start = perf_counter()
+            data = get_user_scenario(scenarioid, session=None, created_session=False)
             logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
             data = data_formatter(data)
             logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")

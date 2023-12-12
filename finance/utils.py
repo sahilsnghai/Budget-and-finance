@@ -2,6 +2,7 @@ from djangoproject.constants import Constants
 from rest_framework.status import HTTP_200_OK
 from json import loads
 from djangoproject.main_logger import set_up_logging
+from .database.db import engine
 
 import pandas as pd
 
@@ -24,6 +25,7 @@ def create_response(data, code =HTTP_200_OK, error=False, **kwags):
     constants.STATUS200["error"] = error
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
+    logger.info(f"Session Status : {engine.pool.status()}")
 
 
 def data_formatter(data, load=True):

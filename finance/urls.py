@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateHierarchy, SavesScenario, FetchFrom, FetchScenario, GetData, AlterData, filterColumn
+from .views import CreateHierarchy, SavesScenario, FetchFrom, FetchScenario, GetData, AlterData, filterColumn, GetScenario
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -13,4 +13,6 @@ urlpatterns = [
     path('get-data', GetData.as_view() , name='get-data'),
     path('alter-data', AlterData.as_view() , name='get-data'),
     path('filter-column', filterColumn.as_view() , name='filter-column'),
+    path('get-scenario', GetScenario.as_view() , name='get-scenario'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

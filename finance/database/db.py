@@ -8,5 +8,7 @@ finance = settings.DATABASES["financeApp"]
 
 engine = create_engine(
     f"""mysql+mysqlconnector://{finance["USER"]}:{finance["PASSWORD"]}@{finance["HOST"]}:{finance["PORT"]}/{finance["NAME"]}""",
+    pool_size=1,
+
 )
 Session = sessionmaker(bind=engine)
