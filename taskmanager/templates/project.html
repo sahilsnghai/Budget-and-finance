@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="project-details-container">
+  <div class="project-details-section">
+    <h2>{{ project.project_name }}</h2>
+    <h5>⁓ {{ project.created_by__username }}</h5>
+  </div>
+  <hr class="divider">
+  <div class="project-details-section">
+    <h4>Description</h4>
+    <p>{{ project.project_description }}</p>
+  </div>
+  
+
+  {% if request.user.username == project.created_by__username %}
+  <a href="{% url 'edit' task='project' pk=project.tm_project_id %}"><button class="edit-button">Edit</button></a>
+  <a href="{% url 'delete' task='project' pk=project.tm_project_id %}"><button class="delete-button">Delete</button></a>
+  {% endif %}
+</div>
+
+
+<style>
+
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  overflow-x: hidden;
+}
+  .project-details-container {
+  max-width: 600px;
+  width: 80%;
+  margin: 20px auto;
+  padding: 15px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: #fff;
+  
+}
+
+.project-details-section {
+  margin-bottom: 20px;
+}
+
+.project-details-section h2 {
+  font-size: 30px;
+  color: #10182f;
+  text-align: center;
+}
+
+.project-details-section h5 {
+  font-size: 20px;
+  color: #555;
+  text-align: right;
+}
+
+.divider {
+  border: 1px solid #ddd;
+}
+
+.project-details-section h4 {
+  font-size: 23px;
+  color: #333;
+  margin-bottom: 10px;
+  margin-left: 220px;
+}
+
+.project-details-section p {
+  font-size: 20px;
+  color: #777;
+}
+
+.edit-button,
+.delete-button {
+  display: inline-block;
+  padding: 10px 13px;
+  margin-top: 10px;
+  margin-left: 150px;
+  text-decoration: none;
+  color: #fff;
+  background-color: #3498db;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  font-family: Arial, Helvetica, sans-serif;
+  border-radius: 7px;
+  border: none;
+  font-size: 16px;
+}
+
+.edit-button:hover,
+.delete-button:hover {
+  background-color: #2980b9;
+}
+</style>
+{% endblock %}

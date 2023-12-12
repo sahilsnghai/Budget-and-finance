@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card-container">
+  <div class="delete-confirmation">
+    <h2>Confirm Deletion</h2>
+    <form method="post" action="">
+      <div></div>
+      {% csrf_token %}
+      <div class="form__group">
+        <p>Are you sure you want to delete "{{ obj }}"?</p>
+      </div>
+
+      <div class="form__group">
+        <input class="btn btn--main" type="submit" value="Confirm" />
+      </div>
+      <a href="{{ request.META.HTTP_REFERER }}" class="cancel-button">Cancel</a>
+    </form>
+  </div>
+</div>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(236, 235, 244, 0.725);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-container {
+    background-color: #fffefe;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 50%;
+  }
+
+  .delete-confirmation {
+    text-align: center;
+  }
+
+  h2 {
+    color: #333333;
+  }
+
+  .form__group {
+    margin-bottom: 15px;
+  }
+
+  p {
+    margin: 0;
+    color: #555555;
+  }
+
+  .cancel-button {
+    display: inline-block;
+    margin-top: 1px;
+    color: #777777;
+    text-decoration: none;
+  }
+
+  .cancel-button:hover {
+    color: #555555;
+    text-decoration: none;
+  }
+
+</style>
+{% endblock %}

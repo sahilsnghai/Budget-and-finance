@@ -1,0 +1,13 @@
+<!-- navbar.html -->
+<li class="user-info">
+    <div class="user-details" onclick="toggleDropdown()">
+        <span class="user-icon">👨‍💻</span>
+        <span class="user-name">{{ request.user.username }}</span>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+        <a href="#">
+            👤Profile </a>
+        <a href="{% url 'logout' %}">
+            🚪Logout </a>
+    </div>
+</li>

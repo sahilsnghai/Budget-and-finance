@@ -1,0 +1,19 @@
+
+{% load static %}
+
+<td> {{ tm_task_info_form.task_title }} </td>
+<td> {{ tm_task_info_form.created_by }} </td>
+<td> {{ tm_task_info_form.modified_by }} </td>
+
+<td> {{ tm_task_form.tm_task_type}} </td>
+<td> {{ tm_task_form.tm_priority }} </td>
+<td> {{ tm_task_info_form.end_date }} </td>
+<td> {{ tm_task_form.tm_status }} </td>
+<td> {{ tm_task_form.tm_project }} </td>
+
+<input type="hidden" name="tm_user" value="{{ request.user.tm_user_id }}">
+<input type="hidden" name="pk" value="{{ task.tm_task_id }}">
+
+<td><button class="savebtnn" name="save" value="ticket">
+<img class="savebtn" src="{% static 'images/save.png' %}">
+</button></td>

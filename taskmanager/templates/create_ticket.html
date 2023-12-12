@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  overflow-x: hidden;
+}
+.form-container{
+  margin-top: 25px;
+  max-width: 1200px; /* Adjust the max-width as needed */
+  width: 80%; /* Fallback width for older browsers or smaller screens */
+  font-size: 15px;
+}
+
+.container {
+  display: flex;
+}
+
+.left-card {
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  border-radius: 8px;
+}
+
+.right-card {
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  border-radius: 8px;
+}
+
+.left-card {
+  flex: 4;
+}
+
+.right-card {
+  flex: 2;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input,
+select,
+textarea {
+  width: calc(100% - 10px); /* Adjust the width based on your preference */
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+input[type="submit"] {
+  background-color: #0996d7;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+input[type="submit"]:hover {
+  background-color: #45a049;
+}
+
+
+</style>
+
+<div class="form-container">
+  {% if 'edit' in request.get_full_path %}
+  <h2>Edit Task</h2>
+  {% else %}
+  <h2>Create a New Task</h2>
+  {% endif %}
+  <form id="form-ticket" method="post">
+
+    {% csrf_token %}
+
+    <div class="container">
+      <div class="left-card">
+        <div class="form-group">
+          <label for="{{ form.task_info_form.task_title.id_for_label }}">Title:</label>
+          {{ form.task_info_form.task_title }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_info_form.task_description.id_for_label }}">Description:</label>
+          {{ form.task_info_form.task_description }}
+        </div>
+      </div>
+  
+      <div class="right-card">
+        <div class="form-group">
+          <label for="{{ form.task_info_form.created_by.id_for_label }}">Reporter:</label>
+          {{ form.task_info_form.created_by }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_info_form.modified_by.id_for_label }}">Assignee:</label>
+          {{ form.task_info_form.modified_by }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_form.tm_task_type.id_for_label }}">Type:</label>
+          {{ form.task_form.tm_task_type }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_form.tm_priority.id_for_label }}">Priority:</label>
+          {{ form.task_form.tm_priority }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_info_form.start_date.id_for_label }}">Start Date:</label>
+          {{ form.task_info_form.start_date }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_info_form.end_date.id_for_label }}">End Date:</label>
+          {{ form.task_info_form.end_date }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_form.tm_status.id_for_label }}">Status:</label>
+          {{ form.task_form.tm_status }}
+        </div>
+  
+        <div class="form-group">
+          <label for="{{ form.task_form.tm_project.id_for_label }}">Project:</label>
+          {{ form.task_form.tm_project }}
+        </div>
+        <input type="hidden" name="tm_user" value="{{ request.user.tm_user_id }}">
+        <input type="submit" value="Create Ticket">
+      </div>
+    </div>
+
+{% endblock %}
