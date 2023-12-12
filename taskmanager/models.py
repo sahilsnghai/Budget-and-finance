@@ -3,7 +3,7 @@ from django.db.models import (
     AutoField,
     CharField,
     EmailField,
-    DateTimeField,
+    DateField,
     IntegerField,
     BooleanField,
     TextField,
@@ -44,9 +44,9 @@ class TmUser(AbstractBaseUser, PermissionsMixin):
     tm_user_id = AutoField(primary_key=True)
     username = CharField(max_length=255, unique=True)
     email = EmailField(max_length=255, unique=True)
-    created_on = DateTimeField(default=now, editable=False)
+    created_on = DateField(default=now, editable=False)
     modified_by = IntegerField(null=True, blank=True)
-    modified_on = DateTimeField(null=True, blank=True)
+    modified_on = DateField(null=True, blank=True)
     is_active = BooleanField(default=True)
     is_staff = BooleanField(default=False)
 
@@ -65,16 +65,22 @@ class TmUser(AbstractBaseUser, PermissionsMixin):
         self.modified = now()
         return super(TmUser, self).save(*args, **kwargs)
 
+    class Meta:
+        db_table = 'tm_user'
+
 
 class TmSourceInfo(Model):
     tm_source_info_id = AutoField(primary_key=True)
     source_info_name = CharField(max_length=255)
-    created_on = DateTimeField(default=now, editable=False)
-    modified_on = DateTimeField(default=now)
+    created_on = DateField(default=now, editable=False)
+    modified_on = DateField(default=now)
     is_active = BooleanField(default=True)
 
     def __str__(self):
         return self.source_info_name
+
+    class Meta:
+        db_table = 'tm_source_info'
 
 
 class TmTaskInfo(Model):
@@ -82,9 +88,9 @@ class TmTaskInfo(Model):
     tm_task_info_id = AutoField(primary_key=True)
     task_title = CharField(max_length=255)
     task_description = TextField(null=True, blank=True)
-    start_date = DateTimeField(default=now)
-    end_date = DateTimeField(default=now)
-    close_date = DateTimeField(default=now, blank=True)
+    start_date = DateField(default=now)
+    end_date = DateField(default=now)
+    close_date = DateField(default=now, blank=True)
     label = CharField(max_length=255, null=True, blank=True)
     created_by = ForeignKey(
         TmUser,
@@ -93,7 +99,7 @@ class TmTaskInfo(Model):
         null=True,
         related_name="reporter",
     )
-    created_on = DateTimeField(default=now, editable=False)
+    created_on = DateField(default=now, editable=False)
     modified_by = ForeignKey(
         TmUser,
         on_delete=SET_DEFAULT,
@@ -102,7 +108,7 @@ class TmTaskInfo(Model):
         blank=True,
         related_name="assignee",
     )
-    modified_on = DateTimeField(default=now, blank=True)
+    modified_on = DateField(default=now, blank=True)
     is_active = BooleanField(default=True)
 
     def __str__(self):
@@ -114,26 +120,31 @@ class TmTaskInfo(Model):
             self.created = now()
         self.modified = now()
         return super(TmTaskInfo, self).save(*args, **kwargs)
+    
+    class Meta:
+        db_table = 'tm_task_info'
 
 
 class TmTaskType(Model):
     tm_task_type_id = AutoField(primary_key=True)
     task_type_name = CharField(max_length=250)
     task_type_description = TextField()
-    created_on = DateTimeField(default=now, editable=False)
-    modified_on = DateTimeField(default=now)
+    created_on = DateField(default=now, editable=False)
+    modified_on = DateField(default=now)
     is_active = BooleanField(default=True)
 
     def __str__(self):
         return self.task_type_name
 
+    class Meta:
+        db_table = 'tm_task_type'
 
 class TmStatus(Model):
     tm_status_id = AutoField(primary_key=True)
     status_name = CharField(max_length=255, null=True, blank=True)
     colour = CharField(max_length=255, default="green")
-    created_on = DateTimeField(default=now, editable=False)
-    modified_on = DateTimeField(default=now)
+    created_on = DateField(default=now, editable=False)
+    modified_on = DateField(default=now)
     is_active = BooleanField(default=True)
 
     def __str__(self):
@@ -146,21 +157,24 @@ class TmStatus(Model):
         self.modified = now()
         return super(TmStatus, self).save(*args, **kwargs)
 
+    class Meta:
+        db_table = 'tm_status'
+
 
 class TmProject(Model):
     tm_project_id = AutoField(primary_key=True)
     project_name = CharField(max_length=255)
     project_description = TextField()
-    start_date = DateTimeField(null=True, blank=True, default=now)
-    end_date = DateTimeField(null=True, blank=True)
+    start_date = DateField(null=True, blank=True, default=now)
+    end_date = DateField(null=True, blank=True)
     created_by = ForeignKey(
         TmUser, on_delete=SET_NULL, null=True, related_name="project_created_by"
     )
-    created_on = DateTimeField(default=now, editable=False)
+    created_on = DateField(default=now, editable=False)
     modified_by = ForeignKey(
         TmUser, on_delete=SET_NULL, null=True, related_name="project_modified_by"
     )
-    modified_on = DateTimeField(default=now)
+    modified_on = DateField(default=now)
 
     def __str__(self):
         return self.project_name
@@ -172,16 +186,22 @@ class TmProject(Model):
         self.modified = now()
         return super(TmProject, self).save(*args, **kwargs)
 
+    class Meta:
+        db_table = 'tm_project'
+
 
 class TmPriority(Model):
     tm_priority_id = AutoField(primary_key=True)
     priority_name = CharField(max_length=255, null=True, blank=True)
-    created_on = DateTimeField(default=now, editable=False)
-    modified_on = DateTimeField(default=now)
+    created_on = DateField(default=now, editable=False)
+    modified_on = DateField(default=now)
     is_active = BooleanField(default=True)
 
     def __str__(self):
         return self.priority_name
+
+    class Meta:
+        db_table = 'tm_priority'
 
 
 class TmTask(Model):
@@ -197,9 +217,12 @@ class TmTask(Model):
         TmSourceInfo, on_delete=CASCADE, null=True, blank=True
     )
     tm_task_type = ForeignKey(TmTaskType, on_delete=CASCADE)
-    created_on = DateTimeField(default=now, editable=False)
-    modified_on = DateTimeField(auto_now=True)
+    created_on = DateField(default=now, editable=False)
+    modified_on = DateField(auto_now=True)
     is_active = BooleanField(default=True)
 
     def __str__(self):
         return f"{self.tm_task_info.task_title} - {self.tm_project.project_name}"
+
+    class Meta:
+        db_table = 'tm_task'

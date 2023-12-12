@@ -16,7 +16,6 @@ from .constants import Constants
 constant = Constants()
 
 financeApp = constant.get_conn_info('financeApp')
-print(financeApp)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -89,7 +88,7 @@ ROOT_URLCONF = "djangoproject.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / "taskmanager/templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

@@ -32,8 +32,8 @@ def update(req, task, pk):
             )
             username = {
                 tm_task.tm_user.username,
-                task_info.modified_by.get_username(),
-                task_info.created_by.get_username(), 
+                task_info.created_by.get_username, 
+                task_info.modified_by.get_username,
             }
             logger.info("getting from instance ")
             task_form = TmTaskForm(instance=tm_task)
@@ -93,7 +93,7 @@ def delete(req, task, pk):
     if req.method == "POST":
         logger.info(f"Finally deleting")
         obj.delete()
-        return redirect("ticket-list")
+        return redirect(f"{task}-list")
     logger.info(f"Asking finally")
     return render(req, "delete.html", {"obj": obj, "id": id})
 
@@ -104,6 +104,7 @@ def home(req):
     tm_tasks = TmTask.objects.all().order_by("tm_status")
     tm_task_form = TmTaskForm()
     tm_task_info_form = TmTaskInfoForm()
+    users = TmUser.objects.all()
 
     if not req.user.is_authenticated:
         logger.info(f"User is not logged in")
@@ -123,7 +124,9 @@ def home(req):
     context = {
         "tm_tasks": tm_tasks,
         "tm_task_form":tm_task_form,
-        "tm_task_info_form":tm_task_info_form
+        "tm_task_info_form":tm_task_info_form,
+        "tm_tasks": tm_tasks,
+        "users": users
     }
     return render(req, "home.html", context)
 
@@ -250,7 +253,7 @@ def create_ticket(req, task_info_instance=None, task_instance=None):
             task_instance = TmTaskForm(req.POST)
             task_info_instance = TmTaskInfoForm(req.POST)
 
-        logger.info(f"create project {req.POST=}")
+        logger.info(f"create ticket {req.POST=}")
         if task_instance.is_valid() and task_info_instance.is_valid():
             task_info_instance = task_info_instance.save(commit=False)
             task_info_instance.modified_on = timezone.now()
@@ -261,7 +264,7 @@ def create_ticket(req, task_info_instance=None, task_instance=None):
             task_instance.tm_task_info = task_info_instance
             task_instance.save()
 
-            return redirect("ticket-list")
+            return redirect("home")
         logger.info(f"{task_instance.errors=} \n{task_info_instance.errors=}")
 
     return render(req, "create_ticket.html", {"form": form})
@@ -304,7 +307,7 @@ def ticket_list(req):
 @login_required
 def project_list(req):
     projects = TmProject.objects.all().values(
-        "created_by__username", "tm_project_id", "project_name", "project_description"
+        "created_by__username", "tm_project_id", "project_name", "project_description","start_date","end_date"
     )
     logger.info(f"project list fetch success")
     return render(req, "project_list.html", {"projects": projects})
