@@ -47,7 +47,7 @@ def format_df(df,*args, **kwargs):
     
     df["amount_type"] = df["amount_type"].replace(
         {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0})
-    logger.info(f"{kwargs=}")
+    logger.info(f"{kwargs=}  and {df.columns}")
     if formid := kwargs.get("formid",None):
         df["fn_form_id"] = formid
         df["created_by"] = df["modified_by"] = kwargs.get("userid",None)

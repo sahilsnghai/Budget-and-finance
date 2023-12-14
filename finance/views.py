@@ -74,6 +74,7 @@ class CreateHierarchy(APIView):
 
         except Exception as e:
             logger.exception(e)
+            raise e
         return {
             "column_name":user_data[0].keys(),
             "row_names":user_data
@@ -151,13 +152,13 @@ class AlterData(APIView):
         userid= data["userid"]
         formid= data["formid"]
         dataframe = get_user_data(userid=userid, formid=formid)
-        df = data_formatter(dataframe, False)
+        df = pd.DataFrame(dataframe)
         
         try:
-            modified_dfs = alter_data(df,datalist=datalist)
+            modified_dfs = alter_data(df, datalist=datalist)
             logger.info(f"Calculation done")
             result_df = pd.concat(modified_dfs, ignore_index=True)
-            data, meta= loads(result_df.iloc[:, 2:].to_json(orient="records")),{}
+            data, meta = loads(result_df.drop(columns=["Date"]).to_json(orient="records")),{}
             logger.info(f"alter data len {len(data)}")
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")

@@ -157,25 +157,22 @@ def get_user_data(formid, userid, session=None, created_session=False):
             created_session = True
         with Session() as session:
             start = perf_counter()
-            user_sql = (
-                session.query(
-                    FnUserData.date,
-                    FnUserData.receipt_number,
-                    FnUserData.business_unit,
-                    FnUserData.account_type,
-                    FnUserData.account_subtype,
-                    FnUserData.project_name,
-                    FnUserData.amount_type,
-                    FnUserData.amount,
-                )
-                .filter(
-                    FnUserData.fn_form_id == formid,
-                    FnUserData.created_by == userid,
-                    FnUserData.is_active == True,
-                )
-                .all()
+            user_data = receive_query(session.query(
+                FnUserData.fn_user_data_id.label("user_data_id"),
+                FnUserData.date.label("Date"),
+                FnUserData.receipt_number.label("Receipt Number"),
+                FnUserData.business_unit.label("Business Unit"),
+                FnUserData.account_type.label("Account Type"),
+                FnUserData.account_subtype.label("Account SubType"),
+                FnUserData.project_name.label("Project Name"),
+                case((FnUserData.amount_type == 1, 'Actual'), (FnUserData.amount_type == 0, 'Projected'),
+                      else_='Unknown').label('Amount Type'),
+                FnUserData.amount.label("Amount")
+            ).filter(
+                FnUserData.fn_form_id == formid,
+                FnUserData.created_by == userid
+            ).all()
             )
-            user_data = [row._asdict() for row in user_sql]
             logger.info(
                 f"got user data for  {len(user_data)} time took {perf_counter() - start}"
             )
