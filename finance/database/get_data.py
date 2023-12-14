@@ -48,18 +48,34 @@ def create_form(form_name, lum_user_id, lum_org_id):
     return formid
 
 
-def create_user_data(df, formid):
-    user_data_instance = None
+def create_user_data(df, formid, userid):
+    user_data = None
     try:
         logger.info(f"Updating user data")
         df = df.dropna()
         with Session() as session:
-            logger.info(f" aafter session{len(df)}")
             data = df.to_dict(orient="records")
-            logger.info(f" aafter session2 {len(data)}")
+
             session.bulk_insert_mappings(FnUserData, data)
             session.commit()
-            logger.info(f"User data saved with ID: {formid} ")
+            
+            user_data = receive_query(session.query(
+                FnUserData.fn_user_data_id.label("user_data_id"),
+                FnUserData.date.label("Date"),
+                FnUserData.receipt_number.label("Receipt Number"),
+                FnUserData.business_unit.label("Business Unit"),
+                FnUserData.account_type.label("Account Type"),
+                FnUserData.account_subtype.label("Account SubType"),
+                FnUserData.project_name.label("Project Name"),
+                FnUserData.amount_type.label("Amount Type"),
+                FnUserData.amount.label("Amount")
+            ).filter(
+                FnUserData.fn_form_id == formid,
+                FnUserData.created_by == userid
+            ).all()
+            )
+            
+            logger.info(f"User data saved with ID : {formid} and len is {len(user_data)} ")
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error saving user form data: {e}")
@@ -68,6 +84,7 @@ def create_user_data(df, formid):
         logger.exception(f"Error in SQL: {e}")
     finally:
         session.close()
+    return user_data
 
 
 def fetch_from(userid, orgid):
@@ -241,12 +258,14 @@ def create_scenario(
             scenarioid = scenario_instance.fn_scenario_id
         else:
             logger.info(f"found similar. scenario_name for {userid}")
+            raise Exception("Scenario already exits")
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error saving form: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
+        raise e
     finally:
         created_session and session.close()
     return scenarioid

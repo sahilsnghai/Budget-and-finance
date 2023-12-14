@@ -46,11 +46,10 @@ class CreateHierarchy(APIView):
         data = None
         try:
             start = perf_counter()
-            data = self.create_hierarchy(
+            data = self.save_matrix(
                 df=pd.read_excel(file), userid=userid, orgid=orgid, filename=file.name
             )
             logger.info(f"time by hierarchy {perf_counter() - start}")
-            data = {"data": data}
             meta = {}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
@@ -69,12 +68,16 @@ class CreateHierarchy(APIView):
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
                 df = format_df(df, formid=formid, userid=kwargs.get("userid"))
-                create_user_data(df, formid)
+                user_data = create_user_data(df, formid, userid=kwargs.get("userid"))
             else:
                 logger.info(f"Could not create form wih id -> {formid}")
 
         except Exception as e:
             logger.exception(e)
+        return {
+            "column_name":user_data[0].keys(),
+            "row_names":user_data
+            } 
 
     @staticmethod
     def create_hierarchy(df, **kwargs):
@@ -102,57 +105,43 @@ class CreateHierarchy(APIView):
                     "total: -315955.766192733,
                     "January":981221,
                     "Febaruy":7982398
-                },
-                {
-
-                    "Class / LOB": "AI/ML",
-                    "Entity (Line): Name (Grouped)": "National Health Mission",
-                    "Account Type": "1. Income",
-                    "Account": "Growth revenue",
-                    "Project Name: Name": "NHM: Product Development",
-                    "base value": -315955.766192733
-                    "forecast value": -315955.766192733,
-                    "month data":[
-                        {"January":981221},
-                        {"Febaruy":7982398}
-                        ]
-                },
+                }
             ]
         }
         """
-        start = perf_counter()
-        Thread(
-            target=CreateHierarchy.save_matrix,
-            daemon=True,
-            args=[df, kwargs.pop("filename", None)],
-            kwargs=kwargs,
-        ).start()
-        logger.info(f"time by read excel {perf_counter() - start}")
-        df = df.groupby([df.columns[0]] + df.columns[2:-1].tolist(), as_index=False)[
-            df.columns[-1]
-        ].sum()
-        df["date_str"] = pd.to_datetime(df[df.columns[0]]).dt.strftime("%B")
-        df["month"] = df.groupby(list(df.columns[:-1]))[[df.columns[-2]]].transform(
-            "sum"
-        )
-        df["month"] = df.apply(lambda x: {x["date_str"]: x["month"]}, axis=1)
-        logger.info(f"time by formatting {perf_counter() - start}")
+        pass
+        # start = perf_counter()
+        
+        # data = CreateHierarchy.save_matrix(df)
+        
+        # data = saved_user_data.join()
+        # logger.info("got data")
+        # logger.info(f"{data=}")
 
-        months = df["date_str"].unique().tolist()
-        df = df.drop(columns="date_str")
-        columns = df.columns[:-1].to_list() + months
-        row_names = loads(df[df.columns[:]].to_json(orient="records"))
-        logger.info(f"time by months, rows and columns {perf_counter() - start}")
+        # logger.info(f"time by read excel {perf_counter() - start}")
+        # df = df.groupby([df.columns[0]] + df.columns[1:-1].tolist(), as_index=False)[
+        #     df.columns[-1]
+        # ].sum()
+        # logger.info(f"df.columns {df.columns}")
+        # df["date_str"] = pd.to_datetime(df[df.columns[0]]).dt.strftime("%B")
+        # df["month"] = df.groupby(list(df.columns[:-1]))[[df.columns[-2]]].transform(
+        #     "sum"
+        # )
+        # df["month"] = df.apply(lambda x: {x["date_str"]: x["month"]}, axis=1)
+        # logger.info(f"time by formatting {perf_counter() - start}")
 
-        for item in row_names:
-            if isinstance(item.get("month"), dict):
-                item.update(item.pop("month"))
-        logger.info(f"time by for loop {perf_counter() - start}")
+        # months = df["date_str"].unique().tolist()
+        # df = df.drop(columns="date_str")
+        # columns = df.columns[:-1].to_list() + months
+        # row_names = loads(df[df.columns[:]].to_json(orient="records"))
+        # logger.info(f"time by months, rows and columns {perf_counter() - start}")
 
-        return {
-            "column_names": columns,
-            "row_names": row_names,
-        }
+        # for item in row_names:
+        #     if isinstance(item.get("month"), dict):
+        #         item.update(item.pop("month"))
+        # logger.info(f"time by for loop {perf_counter() - start}")
+        # logger.info(f"len of rows {len(row_names)}")
+        # return data
 
 
 class AlterData(APIView):
@@ -169,6 +158,7 @@ class AlterData(APIView):
             logger.info(f"Calculation done")
             result_df = pd.concat(modified_dfs, ignore_index=True)
             data, meta= loads(result_df.iloc[:, 2:].to_json(orient="records")),{}
+            logger.info(f"alter data len {len(data)}")
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             meta = {

@@ -23,6 +23,8 @@ COLUMNS = {
 
 def create_response(data, code =HTTP_200_OK, error=False, **kwags):
     constants.STATUS200["error"] = error
+    if kwags.get("Error",None):
+        constants.STATUS200["error_message"] = kwags.get('Error')
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
     logger.info(f"Session Status : {engine.pool.status()}")
@@ -30,11 +32,11 @@ def create_response(data, code =HTTP_200_OK, error=False, **kwags):
 
 def data_formatter(data, load=True):
     df = pd.DataFrame(data)
-    print(data[0])
     df["amount_type"] = df["amount_type"].map({1: "Actual", 0: "Projected"})
     columns = {value : key for key, value in COLUMNS.items()}
     df = df.rename(columns=columns)
     data = loads(df.to_json(orient="records")) if load else df
+    logger.info(f"len of data: {len(data)}")
     return data
 
 

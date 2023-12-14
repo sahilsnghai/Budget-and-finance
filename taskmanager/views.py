@@ -86,14 +86,14 @@ def delete(req, task, pk):
             username = {obj.created_by.username}
             id = obj.tm_project_id
 
-    if not (req.user.username not in username or req.user.is_staff):
+    if not (req.user.username in username or req.user.is_staff):
         logger.info(f"{req.user.username} is not Authorize ")
         return redirect("home")
 
     if req.method == "POST":
         logger.info(f"Finally deleting")
         obj.delete()
-        return redirect(f"{task}-list")
+        return redirect(f"{task}")
     logger.info(f"Asking finally")
     return render(req, "delete.html", {"obj": obj, "id": id})
 
