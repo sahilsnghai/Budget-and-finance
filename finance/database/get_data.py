@@ -1,5 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import or_
+from sqlalchemy import or_, case
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData
 from djangoproject.main_logger import set_up_logging
 from .db import Session
@@ -67,7 +67,8 @@ def create_user_data(df, formid, userid):
                 FnUserData.account_type.label("Account Type"),
                 FnUserData.account_subtype.label("Account SubType"),
                 FnUserData.project_name.label("Project Name"),
-                FnUserData.amount_type.label("Amount Type"),
+                case((FnUserData.amount_type == 1, 'Actual'), (FnUserData.amount_type == 0, 'Projected'),
+                      else_='Unknown').label('Amount Type'),
                 FnUserData.amount.label("Amount")
             ).filter(
                 FnUserData.fn_form_id == formid,
