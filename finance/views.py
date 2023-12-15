@@ -76,6 +76,7 @@ class CreateHierarchy(APIView):
             logger.exception(e)
             raise e
         return {
+            "formid": formid,
             "column_name":user_data[0].keys(),
             "row_names":user_data
             } 
