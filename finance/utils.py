@@ -68,7 +68,11 @@ def alter_data(df, datalist):
         change_percentage = data["changePrecentage"] / 100 + 1
 
         grouped_df = df.groupby(columns_to_group)
-        selected_group = grouped_df.get_group(rows_to_increase)
+        try:
+            selected_group = grouped_df.get_group(rows_to_increase)
+        except KeyError as k:
+            logger.info(f"group not found {k}")
+            continue
         selected_group_copy = selected_group.copy()
         
         amount_column = df.columns[-1]
