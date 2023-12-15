@@ -161,7 +161,7 @@ class AlterData(APIView):
             data, meta = loads(result_df.drop(columns=["Date"]).to_json(orient="records")),{}
             logger.info(f"alter data len {len(data)}")
         except Exception as e:
-            logger.info(f"Exception in creating hierarchy -> {e}")
+            logger.info(f"Exception in Alter Data -> {e}")
             meta = {
                 "Error": str(e),
                 "error": True,
@@ -284,8 +284,6 @@ class filterColumn(APIView):
             start = perf_counter()
             data = filter_column(formid=formid, userid=userid,value=unit_value)
             logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
-            data = data_formatter(data)
-            logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
             meta = {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")

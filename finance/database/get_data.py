@@ -193,15 +193,16 @@ def filter_column(formid, userid, value):
         logger.info(f"getting user data for form id {formid}")
         with Session() as session:
             start = perf_counter()
-            query = session.query(
-                FnUserData.date,
-                FnUserData.receipt_number,
-                FnUserData.business_unit,
-                FnUserData.account_type,
-                FnUserData.account_subtype,
-                FnUserData.project_name,
-                FnUserData.amount_type,
-                FnUserData.amount,
+            query = user_data = session.query(
+                FnUserData.fn_user_data_id.label("user_data_id"),
+                FnUserData.receipt_number.label("Receipt Number"),
+                FnUserData.business_unit.label("Business Unit"),
+                FnUserData.account_type.label("Account Type"),
+                FnUserData.account_subtype.label("Account SubType"),
+                FnUserData.project_name.label("Project Name"),
+                case((FnUserData.amount_type == 1, 'Actual'), (FnUserData.amount_type == 0, 'Projected'),
+                      else_='Unknown').label('Amount Type'),
+                FnUserData.amount.label("Amount")
             ).filter(
                 FnUserData.fn_form_id == formid,
                 FnUserData.created_by == userid,
@@ -210,8 +211,7 @@ def filter_column(formid, userid, value):
             if value not in ['all',"All","ALL"]:
                 query = query.filter(FnUserData.business_unit == value)
             
-            user_data = [row._asdict() for row in query.all()]
-            logger.info(f"filter column {len(user_data)}")
+            user_data = receive_query(query.all())
             logger.info(
                 f"got user data for  {len(user_data)} time took {perf_counter() - start}"
             )

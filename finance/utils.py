@@ -63,8 +63,8 @@ def format_df(df,*args, **kwargs):
 def alter_data(df, datalist):
     modified_dfs = []
     for data in datalist:
-        columns_to_group = data["columns"]
-        rows_to_increase = tuple(data["rows"])
+        columns_to_group = data["columns"] if len(data["columns"]) > 1 else data["columns"][0]
+        rows_to_increase = tuple(data["rows"]) if len(data["rows"]) > 1 else data["rows"][0]
         change_percentage = data["changePrecentage"] / 100 + 1
 
         grouped_df = df.groupby(columns_to_group)
