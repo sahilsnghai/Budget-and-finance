@@ -76,6 +76,8 @@ def alter_data(df, datalist):
         selected_group_copy = selected_group.copy()
         
         amount_column = df.columns[-1]
+        selected_group_copy["base value"] = selected_group_copy[amount_column]
+        selected_group_copy["changePrecentage"] = data["changePrecentage"]
         selected_group_copy[amount_column] *= change_percentage
         modified_dfs.append(selected_group_copy)
     return modified_dfs
