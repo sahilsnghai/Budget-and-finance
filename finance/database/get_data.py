@@ -110,9 +110,10 @@ def fetch_from(userid, orgid):
                 )
                 .all()
             )
-            form_names = {
-                form_name.fn_form_id: form_name.form_name for form_name in form_names
-            }
+            form_names = [
+                {"formid": form_name.fn_form_id, "form_name": form_name.form_name}
+                for form_name in form_names
+            ]
             logger.info(f"Form_name for user {userid}")
     except SQLAlchemyError as e:
         session.rollback()
@@ -445,7 +446,7 @@ def update_scenario(
     data, filters_list, userid, scenarioid, session=None, created_session=False
 ):
     updated_data_list = []
-    
+
     try:
         if session is None:
             session = Session()
@@ -476,36 +477,43 @@ def update_scenario(
             logger.info(f"Creating Filters Dynamic Done")
 
             logger.info(f"Starting Updating")
-            updated_data = session.query(FnScenarioData)\
-                .filter(dynamic_filter_condition)\
+            updated_data = (
+                session.query(FnScenarioData)
+                .filter(dynamic_filter_condition)
                 .update(update, synchronize_session="fetch")
+            )
 
             session.commit()
             logger.info(f"Updation done")
 
             logger.info(f"Number of rows updated: {updated_data}")
-            
+
             logger.info(f"Fetchning data")
-            updated_data_query = session.query(
-                FnScenarioData.fn_scenario_data_id.label("data_id"),
-                FnScenarioData.receipt_number.label("Receipt Number"),
-                FnScenarioData.business_unit.label("Business Unit"),
-                FnScenarioData.account_type.label("Account Type"),
-                FnScenarioData.account_subtype.label("Account SubType"),
-                FnScenarioData.project_name.label("Project Name"),
-                case(
-                    (FnScenarioData.amount_type == 1, "Actual"),
-                    (FnScenarioData.amount_type == 0, "Projected"),
-                    else_="Unknown",
-                ).label("Amount Type"),
-                (
+            updated_data_query = (
+                session.query(
+                    FnScenarioData.fn_scenario_data_id.label("data_id"),
+                    FnScenarioData.receipt_number.label("Receipt Number"),
+                    FnScenarioData.business_unit.label("Business Unit"),
+                    FnScenarioData.account_type.label("Account Type"),
+                    FnScenarioData.account_subtype.label("Account SubType"),
+                    FnScenarioData.project_name.label("Project Name"),
+                    case(
+                        (FnScenarioData.amount_type == 1, "Actual"),
+                        (FnScenarioData.amount_type == 0, "Projected"),
+                        else_="Unknown",
+                    ).label("Amount Type"),
                     (
-                        FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)
-                    ).label("Amount")
-                ),
-                FnScenarioData.amount.label("base value"),
-                FnScenarioData.change_value.label("changePrecentage")
-            ).filter(dynamic_filter_condition).all()
+                        (
+                            FnScenarioData.amount
+                            * (FnScenarioData.change_value / 100 + 1)
+                        ).label("Amount")
+                    ),
+                    FnScenarioData.amount.label("base value"),
+                    FnScenarioData.change_value.label("changePrecentage"),
+                )
+                .filter(dynamic_filter_condition)
+                .all()
+            )
 
             updated_data_list.extend(updated_data_query)
         updated_data_list = receive_query(updated_data_list)
@@ -521,8 +529,6 @@ def update_scenario(
     finally:
         created_session and session.close()
     return updated_data_list
-
-
 
 
 def scenario_status_update(
@@ -593,6 +599,23 @@ def scenario_data_status_update(
         logger.info(f"Changes Status to {stmt} {stmt2} ")
         logger.info(f"Status Change time {perf_counter() - start}")
 
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.exception(f"Error updating status : {e}")
+    except Exception as e:
+        session.rollback()
+        logger.exception(f"Error in SQL: {e}")
+    finally:
+        created_session and session.close()
+    return stmt
+
+def save_scenario(userid, scenarioid, formid, session=None, created_session=False):
+    try:
+        logger.info("save_scenario")
+        if session is None:
+            session = Session()
+            created_session = True
+        stmt = {"Scenario Saved":"Scenario Saved","scenarioid":scenarioid}
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error updating status : {e}")

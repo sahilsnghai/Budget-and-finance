@@ -23,6 +23,7 @@ from .database.get_data import (
     scenario_status_update,
     get_user_scenario_new,
     update_scenario,
+    save_scenario,
     Session
 )
 from time import perf_counter
@@ -232,26 +233,12 @@ class AlterData(APIView):
 class SavesScenario(APIView):
     def post(self, req, format=None):
         data = req.data["data"]
-        scenario_name = data["scenario_name"]
+        scenarioid = data["scenarioid"]
         userid = data["userid"]
-        scenario_decription = data["scenario_decription"]
         formid = data["formid"]
-        datalist = data["datalist"]
         try:
-            with Session() as session:
-                start= perf_counter()
-                scenarioid = create_scenario(scenario_name, scenario_decription, formid, userid, session)
-                dataframe = get_user_data(formid=formid, userid=userid, session=session)
-                logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
-                df = data_formatter(dataframe, False)
-                df = alter_data_df(df, scenarioid, datalist=datalist)
-                df = format_df(df, scenarioid=scenarioid,userid=userid)
-                logger.info(f"time taken while alterations {perf_counter() - start}")
-                data = create_user_data_scenario(df, scenarioid=scenarioid, session=session)
-                logger.info(f"time taken saving complete data with change  {perf_counter() - start}")
-                logger.info(f"{scenarioid=}")
-                data = {"scenarioid":scenarioid}
-                meta ={}
+            data = save_scenario(formid=formid, scenarioid=scenarioid,userid=userid)
+            meta ={}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")
             data = None
@@ -268,7 +255,6 @@ class FetchFrom(APIView):
     def post(self, req, format=None):
         data = None
         try:
-            logger.info(f"{req.data}")
             userid = req.data["data"]["userid"]
             orgid = req.data["data"]["organizationId"]
             logger.info(f"{userid=} {orgid=}")
