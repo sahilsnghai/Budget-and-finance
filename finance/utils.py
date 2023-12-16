@@ -106,39 +106,24 @@ def alter_data_df(df, scenarioid, datalist):
     return df
 
 
-def create_filter(datalist, userid, scenarioid):
-    """ "datalist": [
-        {
-            "columns": [
-                "Business Unit",
-                "Account Type",
-                "Account SubType",
-                "Project Name"
-            ],
-            "rows": [
-                "Business Unit 1",
-                "COGS",
-                "Onshore People",
-                "Gamma"
-            ],
-            "changePrecentage": 39
-        }
-    ]"""
-    filters = {}
+def create_filter(datalist):
     filters_list = []
-
-    change_value = {"change_value": 0}
     changes_list = []
+
     for row in datalist:
+        filters = {}
+        change_value = {"change_value": row["changePrecentage"]}
+
         row["columns"] = [COLUMNS[column] for column in row["columns"]]
-        logger.info(row["columns"])
-        logger.info(row["rows"])
 
         filters.update(zip(row["columns"], row["rows"]))
-        logger.info(filters)
+
         filters_list.append(filters)
-        change_value.update({"change_value": row["changePrecentage"]})
         changes_list.append(change_value)
 
     logger.info(filters_list)
+    logger.info(changes_list)
+
+
     return zip(filters_list, changes_list)
+

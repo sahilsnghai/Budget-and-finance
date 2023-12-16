@@ -184,8 +184,8 @@ class UpdateChangeValue(APIView):
         scenarioid= data["scenarioid"]
         
         try:
-            filters = create_filter(datalist=datalist, userid=userid, scenarioid=scenarioid)
-            data = update_scenario(data, filters)
+            filters = create_filter(datalist=datalist)
+            data = update_scenario(data, filters, userid=userid, scenarioid=scenarioid)
             logger.info(f"Calculation done")
             meta =  {}
             logger.info(f"alter data len {len(data)}")
