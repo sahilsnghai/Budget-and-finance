@@ -21,10 +21,11 @@ COLUMNS = {
     "Amount": "amount",
 }
 
-def create_response(data, code =HTTP_200_OK, error=False, **kwags):
+
+def create_response(data, code=HTTP_200_OK, error=False, **kwags):
     constants.STATUS200["error"] = error
-    if kwags.get("Error",None):
-        constants.STATUS200["error_message"] = kwags.get('Error')
+    if kwags.get("Error", None):
+        constants.STATUS200["error_message"] = kwags.get("Error")
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
     logger.info(f"Session Status : {engine.pool.status()}")
@@ -32,39 +33,41 @@ def create_response(data, code =HTTP_200_OK, error=False, **kwags):
 
 def data_formatter(data, load=True):
     df = pd.DataFrame(data)
-    df["amount_type"] = df["amount_type"].map({1: "Actual", 0: "Projected"})
-    columns = {value : key for key, value in COLUMNS.items()}
-    df = df.rename(columns=columns)
     data = loads(df.to_json(orient="records")) if load else df
     logger.info(f"len of data: {len(data)}")
     return data
 
 
-def format_df(df,*args, **kwargs):
+def format_df(df, *args, **kwargs):
+    df = df.rename(columns=COLUMNS)
 
-    df = df.rename(
-        columns=COLUMNS)
-    
     df["amount_type"] = df["amount_type"].replace(
-        {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0})
+        {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0}
+    )
     logger.info(f"{kwargs=}  and {df.columns}")
-    if formid := kwargs.get("formid",None):
+
+    df["created_by"] = df["modified_by"] = kwargs.get("userid", None)
+
+    if formid := kwargs.get("formid", None):
         df["fn_form_id"] = formid
-        df["created_by"] = df["modified_by"] = kwargs.get("userid",None)
-    elif scenarioid := kwargs.get("scenarioid",None):
+    elif scenarioid := kwargs.get("scenarioid", None):
         logger.info(f"working on {scenarioid}")
         df["fn_scenario_id"] = scenarioid
-        df["created_by"] = df["modified_by"] = kwargs.get("userid",None)
-    
+
     logger.info(f"{len(df)}")
 
     return df
 
+
 def alter_data(df, datalist):
     modified_dfs = []
     for data in datalist:
-        columns_to_group = data["columns"] if len(data["columns"]) > 1 else data["columns"][0]
-        rows_to_increase = tuple(data["rows"]) if len(data["rows"]) > 1 else data["rows"][0]
+        columns_to_group = (
+            data["columns"] if len(data["columns"]) > 1 else data["columns"][0]
+        )
+        rows_to_increase = (
+            tuple(data["rows"]) if len(data["rows"]) > 1 else data["rows"][0]
+        )
         change_percentage = data["changePrecentage"] / 100 + 1
 
         grouped_df = df.groupby(columns_to_group)
@@ -74,25 +77,68 @@ def alter_data(df, datalist):
             logger.info(f"group not found {k}")
             continue
         selected_group_copy = selected_group.copy()
-        
+
         amount_column = df.columns[-1]
         selected_group_copy["base value"] = selected_group_copy[amount_column]
         selected_group_copy["changePrecentage"] = data["changePrecentage"]
-        selected_group_copy[amount_column] *= change_percentage
+        selected_group_copy[amount_column] *= round(change_percentage, 2)
         modified_dfs.append(selected_group_copy)
     return modified_dfs
 
 
-def alter_data_df(df, scenarioid, datalist):    
+def alter_data_df(df, scenarioid, datalist):
     for data in datalist:
         columns_to_group = data["columns"]
         rows_to_increase = tuple(data["rows"])
         change_percentage = data["changePrecentage"] / 100 + 1
         grouped_df = df.groupby(columns_to_group)
-        selected_group = grouped_df.get_group(rows_to_increase)
+
+        try:
+            selected_group = grouped_df.get_group(rows_to_increase)
+        except KeyError as k:
+            logger.info(f"group not found {k}")
+            continue
 
         amount_column = df.columns[-1]
         df.loc[selected_group.index, "change_value"] = change_percentage
         df.loc[selected_group.index, amount_column] *= change_percentage
     df["change_value"].fillna(1, inplace=True)
     return df
+
+
+def create_filter(datalist, userid, scenarioid):
+    """ "datalist": [
+        {
+            "columns": [
+                "Business Unit",
+                "Account Type",
+                "Account SubType",
+                "Project Name"
+            ],
+            "rows": [
+                "Business Unit 1",
+                "COGS",
+                "Onshore People",
+                "Gamma"
+            ],
+            "changePrecentage": 39
+        }
+    ]"""
+    filters = {}
+    filters_list = []
+
+    change_value = {"change_value": 0}
+    changes_list = []
+    for row in datalist:
+        row["columns"] = [COLUMNS[column] for column in row["columns"]]
+        logger.info(row["columns"])
+        logger.info(row["rows"])
+
+        filters.update(zip(row["columns"], row["rows"]))
+        logger.info(filters)
+        filters_list.append(filters)
+        change_value.update({"change_value": row["changePrecentage"]})
+        changes_list.append(change_value)
+
+    logger.info(filters_list)
+    return zip(filters_list, changes_list)

@@ -69,7 +69,7 @@ class FnScenarioData(Base):
     project_name = Column(String(255), default=None)
     amount_type = Column(Integer, default=None)
     amount = Column(Float, nullable=False)
-    change_value = Column(Integer, nullable=False)
+    change_value = Column(Integer, nullable=False, default=0)
     created_by = Column(Integer, nullable=False)
     modified_by = Column(Integer, nullable=False)
     created_on = Column(TIMESTAMP, server_default=func.now())
