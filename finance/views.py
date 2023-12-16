@@ -5,10 +5,9 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from rest_framework.views import APIView
-from .utils import create_response, data_formatter, format_df, alter_data, alter_data_df, create_filter, COLUMNS
+from .utils import create_response, data_formatter, format_df, alter_data, alter_data_df, create_filter
 from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
-from threading import Thread
 from json import loads
 from .database.get_data import (
     create_form,
@@ -338,9 +337,14 @@ class filterColumn(APIView):
             logger.info(f"{req.data=}")
             formid = req.data["data"]["formid"]
             userid = req.data["data"]["userid"]
+            scenarioid = req.data["data"]["scenarioid"]
             unit_value = req.data["data"]["unit"]
             start = perf_counter()
-            data = filter_column(formid=formid, userid=userid,value=unit_value)
+            data = filter_column(scenarioid=scenarioid,formid=formid, userid=userid,value=unit_value)
+            data = { 
+                "column_name": data[0].keys(),
+                "row_names":data
+            }
             logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
             meta = {}
         except Exception as e:

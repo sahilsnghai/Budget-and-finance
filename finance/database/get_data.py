@@ -202,35 +202,33 @@ def get_user_data(formid, userid, session=None, created_session=False):
     return user_data
 
 
-def filter_column(formid, userid, value):
+def filter_column(scenarioid,formid, userid, value):
     user_data = None
     try:
-        logger.info(f"getting user data for form id {formid}")
+        logger.info(f"getting user data for form id {scenarioid}")
         with Session() as session:
             start = perf_counter()
-            scenario_data = receive_query(
-            session.query(
-
-            FnScenarioData.fn_scenario_data_id.label("data_id"),
-            FnScenarioData.receipt_number.label("Receipt Number"),
-            FnScenarioData.business_unit.label("Business Unit"),
-            FnScenarioData.account_type.label("Account Type"),
-            FnScenarioData.account_subtype.label("Account SubType"),
-            FnScenarioData.project_name.label("Project Name"),
-            case((FnScenarioData.amount_type == 1, 'Actual'), 
-                 (FnScenarioData.amount_type == 0, 'Projected'),
-                    else_='Unknown').label('Amount Type'),
-            ((FnScenarioData.amount * (FnScenarioData.change_value/100 + 1)).label("Amount")),
-            FnScenarioData.amount.label("base value"),
-            FnScenarioData.change_value.label("changePrecentage"),
-        )
-        .join(FnScenario)
-        .filter(
-            FnScenarioData.fn_scenario_id == formid,
-            FnScenarioData.is_active == True, 
-            FnScenario.fn_form_id==formid).all())
+            query = session.query(
+                    FnScenarioData.fn_scenario_data_id.label("data_id"),
+                    FnScenarioData.receipt_number.label("Receipt Number"),
+                    FnScenarioData.business_unit.label("Business Unit"),
+                    FnScenarioData.account_type.label("Account Type"),
+                    FnScenarioData.account_subtype.label("Account SubType"),
+                    FnScenarioData.project_name.label("Project Name"),
+                    case((FnScenarioData.amount_type == 1, 'Actual'), 
+                        (FnScenarioData.amount_type == 0, 'Projected'),
+                            else_='Unknown').label('Amount Type'),
+                    ((FnScenarioData.amount * (FnScenarioData.change_value/100 + 1)).label("Amount")),
+                    FnScenarioData.amount.label("base value"),
+                    FnScenarioData.change_value.label("changePrecentage"),
+                ).join(FnScenario, FnScenario.fn_scenario_id == FnScenarioData.fn_scenario_id)\
+            .filter(
+                    FnScenarioData.fn_scenario_id == scenarioid,
+                    FnScenarioData.is_active == True, 
+                    FnScenario.created_by == userid,
+                    FnScenario.fn_form_id==formid)
             if value not in ['all',"All","ALL"]:
-                query = query.filter(FnUserData.business_unit == value)
+                query = query.filter(FnScenarioData.business_unit == value)
             
             user_data = receive_query(query.all())
             logger.info(
@@ -263,7 +261,8 @@ def create_scenario(
             session = Session()
             created_session = True
         scenario_name_list = fetch_scenario(formid=formid, userid=userid)
-        scenario_name_list = scenario_name_list[0] if len(scenario_name_list) > 0 else[]
+        scenario_name_list = {item['scenario_name'] for item in scenario_name_list} if len(scenario_name_list) > 0 else []
+        logger.info(scenario_name_list)
         if not scenario_name in scenario_name_list:
             scenario_instance = FnScenario(
                 fn_form_id=formid,
