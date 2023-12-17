@@ -1,5 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, case, update
+from sqlalchemy import and_, case, func
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData
 from djangoproject.main_logger import set_up_logging
 from .db import Session
@@ -61,7 +61,7 @@ def create_user_data(df, formid, userid):
 
             user_data = receive_query(
                 session.query(
-                    FnUserData.fn_user_data_id.label("user_data_id"),
+                    FnUserData.fn_user_data_id.label("data_id"),
                     FnUserData.date.label("Date"),
                     FnUserData.receipt_number.label("Receipt Number"),
                     FnUserData.business_unit.label("Business Unit"),
@@ -87,7 +87,7 @@ def create_user_data(df, formid, userid):
             )
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error saving user form data: {e}")
+        logger.exception(f"Error saving user data.: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -101,8 +101,11 @@ def fetch_from(userid, orgid):
     try:
         logger.info(f"Fetching forms for user {userid}")
         with Session() as session:
-            form_names = (
-                session.query(FnForm.form_name, FnForm.fn_form_id)
+            form_names = receive_query(
+                session.query(
+                    FnForm.form_name.label("form_name"),
+                    FnForm.fn_form_id.label("formid"),
+                )
                 .filter(
                     FnForm.lum_user_id == userid,
                     FnForm.lum_org_id == orgid,
@@ -110,10 +113,6 @@ def fetch_from(userid, orgid):
                 )
                 .all()
             )
-            form_names = [
-                {"formid": form_name.fn_form_id, "form_name": form_name.form_name}
-                for form_name in form_names
-            ]
             logger.info(f"Form_name for user {userid}")
     except SQLAlchemyError as e:
         session.rollback()
@@ -131,12 +130,12 @@ def fetch_scenario(formid, userid):
     try:
         logger.info(f"fetch scenario for form id {formid} and user {userid}")
         with Session() as session:
-            scenario_names = (
+            scenario_names = receive_query(
                 session.query(
-                    FnScenario.fn_scenario_id,
-                    FnScenario.scenario_description,
-                    FnScenario.scenario_name,
-                    FnScenario.is_active,
+                    FnScenario.fn_scenario_id.label("scenarioid"),
+                    FnScenario.scenario_description.label("scenario_description"),
+                    FnScenario.scenario_name.label("scenario_name"),
+                    FnScenario.is_active.label("scenario_status"),
                 )
                 .distinct(FnScenario.fn_scenario_id)
                 .join(
@@ -151,16 +150,6 @@ def fetch_scenario(formid, userid):
                 .all()
             )
 
-            logger.info(scenario_names)
-            scenario_names = [
-                {
-                    "scenario_id": scenario.fn_scenario_id,
-                    "scenario_description": scenario.scenario_description,
-                    "scenario_name": scenario.scenario_name,
-                    "scenario_status": scenario.is_active,
-                }
-                for scenario in scenario_names
-            ]
             logger.info(f"scenario_name for formid {formid} : {len(scenario_names)}")
     except SQLAlchemyError as e:
         session.rollback()
@@ -267,7 +256,7 @@ def filter_column(scenarioid, formid, userid, value):
             )
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error fetching scenario form: {e}")
+        logger.exception(f"Error filtering columns: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -316,7 +305,7 @@ def create_scenario(
             raise Exception("Scenario already exits")
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error saving form: {e}")
+        logger.exception(f"Error saveing and creating scenario: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -341,7 +330,7 @@ def create_user_data_scenario(df, scenarioid, session=None, created_session=Fals
         logger.info(f"User data saved with ID: {scenarioid}")
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error saving user form data: {e}")
+        logger.exception(f"Error scenario meta data: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -380,7 +369,7 @@ def get_user_scenario(scenarioid, session=None, created_session=False):
         logger.info(f"User data fetch with ID: {scenarioid} ")
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error saving user form data: {e}")
+        logger.exception(f"Error scnario: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -433,7 +422,7 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
         logger.info(f"User data fetch with ID: {scenarioid} ")
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error saving user form data: {e}")
+        logger.exception(f"Error getting user scenario data: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -484,12 +473,12 @@ def update_scenario(
             )
 
             session.commit()
-            logger.info(f"Updation done")
+            logger.info(f"Updation done {updated_data}")
 
             logger.info(f"Number of rows updated: {updated_data}")
 
             logger.info(f"Fetchning data")
-            updated_data_query = (
+            updated_data_query = receive_query(
                 session.query(
                     FnScenarioData.fn_scenario_data_id.label("data_id"),
                     FnScenarioData.receipt_number.label("Receipt Number"),
@@ -502,12 +491,10 @@ def update_scenario(
                         (FnScenarioData.amount_type == 0, "Projected"),
                         else_="Unknown",
                     ).label("Amount Type"),
-                    (
-                        (
-                            FnScenarioData.amount
-                            * (FnScenarioData.change_value / 100 + 1)
-                        ).label("Amount")
-                    ),
+                    func.round(
+                        FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1),
+                        3,
+                    ).label("Amount"),
                     FnScenarioData.amount.label("base value"),
                     FnScenarioData.change_value.label("changePrecentage"),
                 )
@@ -516,13 +503,12 @@ def update_scenario(
             )
 
             updated_data_list.extend(updated_data_query)
-        updated_data_list = receive_query(updated_data_list)
         logger.info(f"Scenario data {len(updated_data_list)}")
         logger.info(f"Time taken by fetching scenario is {perf_counter() - start}")
         logger.info("User data fetch with ID:")
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error saving user form data: {e}")
+        logger.exception(f"Error could not perform SQL query: {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -601,7 +587,7 @@ def scenario_data_status_update(
 
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error updating status : {e}")
+        logger.exception(f"Error delete : {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")
@@ -615,10 +601,10 @@ def save_scenario(userid, scenarioid, formid, session=None, created_session=Fals
         if session is None:
             session = Session()
             created_session = True
-        stmt = {"Scenario Saved":"Scenario Saved","scenarioid":scenarioid}
+        stmt = {"Scenario Saved": "Scenario Saved", "scenarioid": scenarioid}
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error updating status : {e}")
+        logger.exception(f"Error saving scenario : {e}")
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL: {e}")

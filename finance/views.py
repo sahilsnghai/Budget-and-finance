@@ -5,7 +5,7 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from rest_framework.views import APIView
-from .utils import create_response, data_formatter, format_df, alter_data, alter_data_df, create_filter
+from .utils import create_response, data_formatter, format_df, alter_data, create_filter
 from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
 from json import loads
@@ -18,7 +18,6 @@ from .database.get_data import (
     filter_column,
     create_scenario,
     create_user_data_scenario,
-    get_user_scenario,
     scenario_data_status_update,
     scenario_status_update,
     get_user_scenario_new,
