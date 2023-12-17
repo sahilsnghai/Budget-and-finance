@@ -301,8 +301,6 @@ class GetData(APIView):
             start = perf_counter()
             data = get_user_data(formid=formid, userid=userid)
             logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start} ")
-            data = data_formatter(data)
-            logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
             meta = {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")

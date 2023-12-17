@@ -24,11 +24,13 @@ COLUMNS = {
 
 def create_response(data, code=HTTP_200_OK, error=False, **kwags):
     constants.STATUS200["error"] = error
-    if kwags.get("Error", None):
+    logger.info(f"Checking error message {kwags.get('Error', None)}")
+    if kwags.get("Error", None) and error:
         constants.STATUS200["error_message"] = kwags.get("Error")
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
     logger.info(f"Session Status : {engine.pool.status()}")
+    engine.pool.dispose()
 
 
 def data_formatter(data, load=True):

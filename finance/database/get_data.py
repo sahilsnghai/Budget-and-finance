@@ -24,7 +24,7 @@ def receive_query(query):
 
 def create_form(form_name, lum_user_id, lum_org_id):
     form_name = form_name.split(".")[0]
-    formid = None
+    formid = {}
     try:
         logger.info(f"creating form")
         with Session() as session:
@@ -49,7 +49,7 @@ def create_form(form_name, lum_user_id, lum_org_id):
 
 
 def create_user_data(df, formid, userid):
-    user_data = None
+    user_data = {}
     try:
         logger.info(f"Updating user data")
         df = df.dropna()
@@ -97,7 +97,7 @@ def create_user_data(df, formid, userid):
 
 
 def fetch_from(userid, orgid):
-    form_names = None
+    form_names = {}
     try:
         logger.info(f"Fetching forms for user {userid}")
         with Session() as session:
@@ -163,40 +163,39 @@ def fetch_scenario(formid, userid):
 
 
 def get_user_data(formid, userid, session=None, created_session=False):
-    user_data = None
+    user_data = {}
     try:
         logger.info(f"getting user data for form id {formid}")
 
         if session is None:
             session = Session()
             created_session = True
-        with Session() as session:
-            start = perf_counter()
-            user_data = receive_query(
-                session.query(
-                    FnUserData.fn_user_data_id.label("user_data_id"),
-                    FnUserData.date.label("Date"),
-                    FnUserData.receipt_number.label("Receipt Number"),
-                    FnUserData.business_unit.label("Business Unit"),
-                    FnUserData.account_type.label("Account Type"),
-                    FnUserData.account_subtype.label("Account SubType"),
-                    FnUserData.project_name.label("Project Name"),
-                    case(
-                        (FnUserData.amount_type == 1, "Actual"),
-                        (FnUserData.amount_type == 0, "Projected"),
-                        else_="Unknown",
-                    ).label("Amount Type"),
-                    FnUserData.amount.label("Amount"),
-                    FnUserData.amount.label("base value"),
-                )
-                .filter(
-                    FnUserData.fn_form_id == formid, FnUserData.created_by == userid
-                )
-                .all()
+        start = perf_counter()
+        user_data = receive_query(
+            session.query(
+                FnUserData.fn_user_data_id.label("data_id"),
+                FnUserData.date.label("Date"),
+                FnUserData.receipt_number.label("Receipt Number"),
+                FnUserData.business_unit.label("Business Unit"),
+                FnUserData.account_type.label("Account Type"),
+                FnUserData.account_subtype.label("Account SubType"),
+                FnUserData.project_name.label("Project Name"),
+                case(
+                    (FnUserData.amount_type == 1, "Actual"),
+                    (FnUserData.amount_type == 0, "Projected"),
+                    else_="Unknown",
+                ).label("Amount Type"),
+                FnUserData.amount.label("Amount"),
+                FnUserData.amount.label("base value"),
             )
-            logger.info(
-                f"got user data for  {len(user_data)} time took {perf_counter() - start}"
+            .filter(
+                FnUserData.fn_form_id == formid, FnUserData.created_by == userid
             )
+            .all()
+        )
+        logger.info(
+            f"got user data for  {len(user_data)} time took {perf_counter() - start}"
+        )
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error fetching scenario form: {e}")
@@ -209,7 +208,7 @@ def get_user_data(formid, userid, session=None, created_session=False):
 
 
 def filter_column(scenarioid, formid, userid, value):
-    user_data = None
+    user_data = {}
     try:
         logger.info(f"getting user data for form id {scenarioid}")
         with Session() as session:
@@ -273,7 +272,8 @@ def create_scenario(
     session=None,
     created_session=False,
 ):
-    scenarioid = None
+    scenarioid = status = None
+    
     try:
         logger.info(f"creating form")
 
@@ -340,6 +340,7 @@ def create_user_data_scenario(df, scenarioid, session=None, created_session=Fals
 
 
 def get_user_scenario(scenarioid, session=None, created_session=False):
+    scenario_data ={}
     try:
         if session is None:
             session = Session()
@@ -379,6 +380,7 @@ def get_user_scenario(scenarioid, session=None, created_session=False):
 
 
 def get_user_scenario_new(scenarioid, formid, session=None, created_session=False):
+    scenario_data ={}
     try:
         if session is None:
             session = Session()
@@ -443,7 +445,6 @@ def update_scenario(
 
         logger.info("Fetching user data")
         start = perf_counter()
-        updated_data_list = []
         for filters, update in filters_list:
             logger.info(f"Creating Filters")
 
@@ -520,6 +521,7 @@ def update_scenario(
 def scenario_status_update(
     userid, scenarioid, formid, status, session=None, created_session=False
 ):
+    stmt = {}
     try:
         if session is None:
             session = Session()
@@ -555,6 +557,7 @@ def scenario_status_update(
 def scenario_data_status_update(
     userid, scenarioid, formid, status, session=None, created_session=False
 ):
+    stmt = {}
     try:
         if session is None:
             session = Session()
@@ -596,6 +599,7 @@ def scenario_data_status_update(
     return stmt
 
 def save_scenario(userid, scenarioid, formid, session=None, created_session=False):
+    stmt = {}
     try:
         logger.info("save_scenario")
         if session is None:
