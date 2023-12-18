@@ -17,16 +17,21 @@ COLUMNS = {
     "Account Type": "account_type",
     "Account SubType": "account_subtype",
     "Project Name": "project_name",
+    "Customer Name": "customer_name",
     "Amount Type": "amount_type",
     "Amount": "amount",
 }
 
 
 def create_response(data, code=HTTP_200_OK, error=False, **kwags):
+    logger.info(f"kwags = {kwags}")
     constants.STATUS200["error"] = error
-    logger.info(f"Checking error message {kwags.get('Error', None)}")
-    if kwags.get("Error", None) and error:
-        constants.STATUS200["error_message"] = kwags.get("Error")
+
+    logger.info(f"Checking error message {kwags.get('error_message', None)}")
+    if kwags.get("error_message", None) and error:
+        constants.STATUS200["error_message"] = kwags.get("error_message")
+    else:
+        constants.STATUS200.pop("error_message",None)
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
     logger.info(f"Session Status : {engine.pool.status()}")
@@ -41,12 +46,20 @@ def data_formatter(data, load=True):
 
 
 def format_df(df, *args, **kwargs):
+    logger.info(f"Before renaming: {df.columns}")
+    
     df = df.rename(columns=COLUMNS)
+    
+    if common_columns := set(["data_id","base value"]).intersection(df.columns):
+        logger.info(common_columns)
+        df = df.drop(columns=common_columns)
+    logger.info(f"updated columns :\n{df.columns}")
+
 
     df["amount_type"] = df["amount_type"].replace(
         {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0}
     )
-    logger.info(f"{kwargs=}  and {df.columns}")
+    logger.info(f"{kwargs=}")
 
     df["created_by"] = df["modified_by"] = kwargs.get("userid", None)
 

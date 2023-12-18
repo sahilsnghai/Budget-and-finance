@@ -57,7 +57,7 @@ class CreateHierarchy(APIView):
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -83,7 +83,7 @@ class CreateHierarchy(APIView):
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -111,7 +111,7 @@ class CreateHierarchy(APIView):
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -154,9 +154,8 @@ class CreateScenario(APIView):
                 dataframe = get_user_data(formid=formid, userid=userid, session=session)
                 logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
 
-                data = data_formatter(dataframe, False)
+                data = format_df(pd.DataFrame(dataframe), scenarioid=scenarioid, userid=userid)
                 logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
-                data = format_df(data, scenarioid=scenarioid, userid=userid)
                 create_user_data_scenario(df=data, scenarioid=scenarioid, session=session)
                 # user_scenario_data = get_user_scenario_new(scenarioid=scenarioid, formid=formid, session=session)
                 logger.info(f"created scenario with id {scenarioid}")
@@ -165,7 +164,7 @@ class CreateScenario(APIView):
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -192,7 +191,7 @@ class UpdateChangeValue(APIView):
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -220,7 +219,7 @@ class AlterData(APIView):
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -242,7 +241,7 @@ class SavesScenario(APIView):
             logger.info(f"Exception in saving Scenario -> {e}")
             data = None
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -262,7 +261,7 @@ class FetchFrom(APIView):
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -305,7 +304,7 @@ class GetData(APIView):
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -333,7 +332,7 @@ class filterColumn(APIView):
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -363,7 +362,7 @@ class GetScenario(APIView):
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
-                "Error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }

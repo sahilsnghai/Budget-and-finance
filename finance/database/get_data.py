@@ -195,6 +195,7 @@ def get_user_data(formid, userid, session=None, created_session=False):
                 FnUserData.account_type.label("Account Type"),
                 FnUserData.account_subtype.label("Account SubType"),
                 FnUserData.project_name.label("Project Name"),
+                FnUserData.customer_name.label("Customer Name"),
                 case(
                     (FnUserData.amount_type == 1, "Actual"),
                     (FnUserData.amount_type == 0, "Projected"),
@@ -206,6 +207,7 @@ def get_user_data(formid, userid, session=None, created_session=False):
             .filter(FnUserData.fn_form_id == formid, FnUserData.created_by == userid)
             .all()
         )
+        logger.info(f"{len(user_data)}")
         logger.info(
             f"got user data for  {len(user_data)} time took {perf_counter() - start}"
         )
@@ -561,7 +563,7 @@ def update_scenario(
                 .filter(dynamic_filter_condition)
                 .all()
             )
-
+            logger.info(f"len of updated_data_query {len(updated_data_query)}")
             updated_data_list.extend(updated_data_query)
         logger.info(f"Scenario data {len(updated_data_list)}")
         logger.info(f"Time taken by fetching scenario is {perf_counter() - start}")
