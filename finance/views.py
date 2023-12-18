@@ -352,15 +352,13 @@ class GetScenario(APIView):
             logger.info(f"{formid=} {scenarioid=} {userid=}")
             start = perf_counter()
             data = get_user_scenario_new(scenarioid, formid=formid, session=None)
-
-            logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
             data = {
                 "formid": formid,
                 "scenarioid":scenarioid,
                 "column_name": data[0].keys(),
                 "row_names":data
             }            
-            logger.info(f"time taken after fetching and for pandas in GetData {userid} is {perf_counter()-start} ")
+            logger.info(f"time taken after fetching and for {userid} is {perf_counter()-start} ")
             meta = {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
