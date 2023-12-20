@@ -37,91 +37,29 @@ def create_response(data, code=HTTP_200_OK, error=False, **kwags):
     logger.info(f"Session Status : {engine.pool.status()}")
     engine.pool.dispose()
 
-
-def data_formatter(data, load=True):
-    df = pd.DataFrame(data)
-    data = loads(df.to_json(orient="records")) if load else df
-    logger.info(f"len of data: {len(data)}")
-    return data
-
-
 def format_df(df, *args, **kwargs):
     logger.info(f"Before renaming: {df.columns}")
-    
     df = df.rename(columns=COLUMNS)
-    
     if common_columns := set(["data_id","base value"]).intersection(df.columns):
         logger.info(common_columns)
         df = df.drop(columns=common_columns)
     logger.info(f"updated columns :\n{df.columns}")
-
-
     df["amount_type"] = df["amount_type"].replace(
         {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0}
     )
     logger.info(f"{kwargs=}")
-
     df["created_by"] = df["modified_by"] = kwargs.get("userid", None)
-
     if formid := kwargs.get("formid", None):
         df["fn_form_id"] = formid
     elif scenarioid := kwargs.get("scenarioid", None):
         logger.info(f"working on {scenarioid}")
         df["fn_scenario_id"] = scenarioid
-
     logger.info(f"{len(df)}")
-
-    return df
-
-
-def alter_data(df, datalist):
-    modified_dfs = []
-    for data in datalist:
-        columns_to_group = (
-            data["columns"] if len(data["columns"]) > 1 else data["columns"][0]
-        )
-        rows_to_increase = (
-            tuple(data["rows"]) if len(data["rows"]) > 1 else data["rows"][0]
-        )
-        change_percentage = data["changePrecentage"] / 100 + 1
-
-        grouped_df = df.groupby(columns_to_group)
-        try:
-            selected_group = grouped_df.get_group(rows_to_increase)
-        except KeyError as k:
-            logger.info(f"group not found {k}")
-            continue
-        selected_group_copy = selected_group.copy()
-
-        amount_column = df.columns[-1]
-        selected_group_copy["base value"] = selected_group_copy[amount_column]
-        selected_group_copy["changePrecentage"] = data["changePrecentage"]
-        selected_group_copy[amount_column] *= round(change_percentage, 2)
-        modified_dfs.append(selected_group_copy)
-    return modified_dfs
-
-
-def alter_data_df(df, scenarioid, datalist):
-    for data in datalist:
-        columns_to_group = data["columns"]
-        rows_to_increase = tuple(data["rows"])
-        change_percentage = data["changePrecentage"] / 100 + 1
-        grouped_df = df.groupby(columns_to_group)
-
-        try:
-            selected_group = grouped_df.get_group(rows_to_increase)
-        except KeyError as k:
-            logger.info(f"group not found {k}")
-            continue
-
-        amount_column = df.columns[-1]
-        df.loc[selected_group.index, "change_value"] = change_percentage
-        df.loc[selected_group.index, amount_column] *= change_percentage
-    df["change_value"].fillna(1, inplace=True)
     return df
 
 
 def create_filter(datalist):
+    logger.info(f"Creating filters.")
     filters_list = []
     changes_list = []
 
@@ -138,6 +76,7 @@ def create_filter(datalist):
 
     logger.info(filters_list)
     logger.info(changes_list)
+    logger.info(f"Filters created.")
 
 
     return zip(filters_list, changes_list)

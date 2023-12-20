@@ -5,10 +5,10 @@ from .views import (
     FetchFrom,
     FetchScenario,
     GetData,
-    AlterData,
     filterColumn,
     GetScenario,
     CreateScenario,
+    UpdateChangePrecentage,
     UpdateChangeValue
 )
 from django.conf import settings
@@ -21,10 +21,10 @@ urlpatterns = [
     path("filter-form", FetchFrom.as_view(), name="filter-form"),
     path("filter-scenario", FetchScenario.as_view(), name="filter-scenario"),
     path("get-data", GetData.as_view(), name="get-data"),
-    path("alter-data", AlterData.as_view(), name="get-data"),
     path("filter-column", filterColumn.as_view(), name="filter-column"),
     path("get-scenario", GetScenario.as_view(), name="get-scenario"),
     path("create-scenario", CreateScenario.as_view(), name="create-scenario"),
-    path("update-scenario", UpdateChangeValue.as_view(), name="update-scenario"),
+    path("update-scenario", UpdateChangePrecentage.as_view(), name="update-scenario"),
+    path("update-value", UpdateChangeValue.as_view(), name="update-scenario"),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

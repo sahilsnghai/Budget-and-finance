@@ -1,5 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, case, func
+from sqlalchemy import and_, case, func, or_, literal
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData
 from djangoproject.main_logger import set_up_logging
 from .db import Session
@@ -59,43 +59,43 @@ def create_user_data(df, formid, userid):
             session.bulk_insert_mappings(FnUserData, data)
             session.commit()
 
-            user_data = receive_query(
-                session.query(
-                    FnUserData.fn_user_data_id.label("data_id"),
-                    FnUserData.date.label("Date"),
-                    FnUserData.receipt_number.label("Receipt Number"),
-                    FnUserData.business_unit.label("Business Unit"),
-                    FnUserData.account_type.label("Account Type"),
-                    FnUserData.account_subtype.label("Account SubType"),
-                    FnUserData.project_name.label("Project Name"),
-                    case(
-                        (FnUserData.amount_type == 1, "Actual"),
-                        (FnUserData.amount_type == 0, "Projected"),
-                        else_="Unknown",
-                    ).label("Amount Type"),
-                    FnUserData.amount.label("Amount"),
-                    FnUserData.amount.label("base value"),
-                    case(
-                        (func.extract("month", FnUserData.date) == 1, "January"),
-                        (func.extract("month", FnUserData.date) == 2, "February"),
-                        (func.extract("month", FnUserData.date) == 3, "March"),
-                        (func.extract("month", FnUserData.date) == 4, "April"),
-                        (func.extract("month", FnUserData.date) == 5, "May"),
-                        (func.extract("month", FnUserData.date) == 6, "June"),
-                        (func.extract("month", FnUserData.date) == 7, "July"),
-                        (func.extract("month", FnUserData.date) == 8, "August"),
-                        (func.extract("month", FnUserData.date) == 9, "September"),
-                        (func.extract("month", FnUserData.date) == 10, "October"),
-                        (func.extract("month", FnUserData.date) == 11, "November"),
-                        (func.extract("month", FnUserData.date) == 12, "December"),
-                    else_=""
-                ).label("Month"),
-                )
-                .filter(
-                    FnUserData.fn_form_id == formid, FnUserData.created_by == userid
-                )
-                .all()
-            )
+            # user_data = receive_query(
+            #     session.query(
+            #         FnUserData.fn_user_data_id.label("data_id"),
+            #         FnUserData.date.label("Date"),
+            #         FnUserData.receipt_number.label("Receipt Number"),
+            #         FnUserData.business_unit.label("Business Unit"),
+            #         FnUserData.account_type.label("Account Type"),
+            #         FnUserData.account_subtype.label("Account SubType"),
+            #         FnUserData.project_name.label("Project Name"),
+            #         case(
+            #             (FnUserData.amount_type == 1, "Actual"),
+            #             (FnUserData.amount_type == 0, "Budget"),
+            #             else_="Unknown",
+            #         ).label("Amount Type"),
+            #         FnUserData.amount.label("Amount"),
+            #         FnUserData.amount.label("base value"),
+            #         case(
+            #             (func.extract("month", FnUserData.date) == 1, "January"),
+            #             (func.extract("month", FnUserData.date) == 2, "February"),
+            #             (func.extract("month", FnUserData.date) == 3, "March"),
+            #             (func.extract("month", FnUserData.date) == 4, "April"),
+            #             (func.extract("month", FnUserData.date) == 5, "May"),
+            #             (func.extract("month", FnUserData.date) == 6, "June"),
+            #             (func.extract("month", FnUserData.date) == 7, "July"),
+            #             (func.extract("month", FnUserData.date) == 8, "August"),
+            #             (func.extract("month", FnUserData.date) == 9, "September"),
+            #             (func.extract("month", FnUserData.date) == 10, "October"),
+            #             (func.extract("month", FnUserData.date) == 11, "November"),
+            #             (func.extract("month", FnUserData.date) == 12, "December"),
+            #             else_="",
+            #         ).label("Month"),
+            #     )
+            #     .filter(
+            #         FnUserData.fn_form_id == formid, FnUserData.created_by == userid
+            #     )
+            #     .all()
+            # )
 
             logger.info(
                 f"User data saved with ID : {formid} and len is {len(user_data)} "
@@ -153,18 +153,14 @@ def fetch_scenario(formid, userid):
                     FnScenario.is_active.label("scenario_status"),
                 )
                 .distinct(FnScenario.fn_scenario_id)
-                .join(
-                    FnScenarioData,
-                    FnScenarioData.fn_scenario_id == FnScenario.fn_scenario_id,
-                )
                 .filter(
                     FnScenario.fn_form_id == formid,
                     FnScenario.created_by == userid,
-                    FnScenarioData.is_active == True,
+                    FnScenario.is_active == True,
                 )
                 .all()
             )
-
+            logger.info(f"{len(scenario_names)}")
             logger.info(f"scenario_name for formid {formid} : {len(scenario_names)}")
     except SQLAlchemyError as e:
         session.rollback()
@@ -177,7 +173,7 @@ def fetch_scenario(formid, userid):
     return scenario_names
 
 
-def get_user_data(formid, userid, session=None, created_session=False):
+def get_user_data(formid, userid, session=None, created_session=False, **karwgs):
     user_data = {}
     try:
         logger.info(f"getting user data for form id {formid}")
@@ -185,28 +181,51 @@ def get_user_data(formid, userid, session=None, created_session=False):
         if session is None:
             session = Session()
             created_session = True
+
         start = perf_counter()
-        user_data = receive_query(
-            session.query(
-                FnUserData.fn_user_data_id.label("data_id"),
-                FnUserData.date.label("Date"),
+        if karwgs.get("migrate") is not None:
+            common_columns = [
+                FnUserData.date,
+                FnUserData.receipt_number,
+                FnUserData.business_unit,
+                FnUserData.account_type,
+                FnUserData.account_subtype,
+                FnUserData.project_name,
+                FnUserData.customer_name,
+                FnUserData.amount,
+                literal(karwgs.get("scenarioid")).label("fn_scenario_id"),
+                FnUserData.created_by,
+                FnUserData.modified_by,
+                FnUserData.amount_type,
+            ]
+        else:
+            common_columns = [
+                func.DATE_FORMAT(FnUserData.date, "%Y%m%d").label("Date"),
                 FnUserData.receipt_number.label("Receipt Number"),
                 FnUserData.business_unit.label("Business Unit"),
                 FnUserData.account_type.label("Account Type"),
                 FnUserData.account_subtype.label("Account SubType"),
                 FnUserData.project_name.label("Project Name"),
                 FnUserData.customer_name.label("Customer Name"),
+                FnUserData.amount.label("Amount"),
+                FnUserData.customer_name.label("Customer Name"),
                 case(
                     (FnUserData.amount_type == 1, "Actual"),
-                    (FnUserData.amount_type == 0, "Projected"),
+                    (FnUserData.amount_type == 0, "Budget"),
                     else_="Unknown",
                 ).label("Amount Type"),
-                FnUserData.amount.label("Amount"),
-                FnUserData.amount.label("base value"),
+            ]
+
+        user_data = (
+            session.query(*common_columns)
+            .filter(
+                FnUserData.fn_form_id == formid,
+                FnUserData.created_by == userid,
             )
-            .filter(FnUserData.fn_form_id == formid, FnUserData.created_by == userid)
             .all()
         )
+
+        user_data = receive_query(user_data)
         logger.info(f"{len(user_data)}")
         logger.info(
             f"got user data for  {len(user_data)} time took {perf_counter() - start}"
@@ -222,7 +241,7 @@ def get_user_data(formid, userid, session=None, created_session=False):
     return user_data
 
 
-def filter_column(scenarioid, formid, userid, value):
+def filter_column(scenarioid, formid, userid, **kwargs):
     user_data = {}
     try:
         logger.info(f"getting user data for form id {scenarioid}")
@@ -231,6 +250,7 @@ def filter_column(scenarioid, formid, userid, value):
             query = (
                 session.query(
                     FnScenarioData.fn_scenario_data_id.label("data_id"),
+                    func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
                     FnScenarioData.receipt_number.label("Receipt Number"),
                     FnScenarioData.business_unit.label("Business Unit"),
                     FnScenarioData.account_type.label("Account Type"),
@@ -238,7 +258,7 @@ def filter_column(scenarioid, formid, userid, value):
                     FnScenarioData.project_name.label("Project Name"),
                     case(
                         (FnScenarioData.amount_type == 1, "Actual"),
-                        (FnScenarioData.amount_type == 0, "Projected"),
+                        (FnScenarioData.amount_type == 0, "Budget"),
                         else_="Unknown",
                     ).label("Amount Type"),
                     (
@@ -247,6 +267,7 @@ def filter_column(scenarioid, formid, userid, value):
                             * (FnScenarioData.change_value / 100 + 1)
                         ).label("Amount")
                     ),
+                    FnScenarioData.customer_name.label("Customer Name"),
                     FnScenarioData.amount.label("base value"),
                     FnScenarioData.change_value.label("changePrecentage"),
                     case(
@@ -262,8 +283,9 @@ def filter_column(scenarioid, formid, userid, value):
                         (func.extract("month", FnScenarioData.date) == 10, "October"),
                         (func.extract("month", FnScenarioData.date) == 11, "November"),
                         (func.extract("month", FnScenarioData.date) == 12, "December"),
-                    else_=""
-                ).label("Month"),
+                        else_="",
+                    ).label("Month"),
+                    (func.extract("year", FnScenarioData.date).label("year")),
                 )
                 .join(
                     FnScenario,
@@ -276,12 +298,19 @@ def filter_column(scenarioid, formid, userid, value):
                     FnScenario.fn_form_id == formid,
                 )
             )
-            if value not in ["all", "All", "ALL"]:
-                query = query.filter(FnScenarioData.business_unit == value)
+            if kwargs["year"]:
+                query = query.filter(
+                    func.extract("year", FnScenarioData.date) == kwargs["year"]
+                )
+
+            if kwargs["business_unit"] and kwargs["business_unit"].lower() != "all":
+                query = query.filter(
+                    FnScenarioData.business_unit == kwargs.get("business_unit")
+                )
 
             user_data = receive_query(query.all())
             logger.info(
-                f"got user data for  {len(user_data)} time took {perf_counter() - start}"
+                f"got user data len {len(user_data)} time took {perf_counter() - start}"
             )
     except SQLAlchemyError as e:
         session.rollback()
@@ -345,16 +374,17 @@ def create_scenario(
     return scenarioid, status
 
 
-def create_user_data_scenario(df, scenarioid, session=None, created_session=False):
+def create_user_data_scenario(
+    dataframe, scenarioid, session=None, created_session=False
+):
     try:
         if session is None:
             session = Session()
             created_session = True
 
         logger.info(f"Updating user data")
-        data = df.to_dict(orient="records")
         start = perf_counter()
-        session.bulk_insert_mappings(FnScenarioData, data)
+        session.bulk_insert_mappings(FnScenarioData, dataframe)
         session.commit()
         logger.info(f"time taken by save scenario is {perf_counter() - start}")
         logger.info(f"User data saved with ID: {scenarioid}")
@@ -422,6 +452,7 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
         scenario_data = receive_query(
             session.query(
                 FnScenarioData.fn_scenario_data_id.label("data_id"),
+                func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
                 FnScenarioData.receipt_number.label("Receipt Number"),
                 FnScenarioData.business_unit.label("Business Unit"),
                 FnScenarioData.account_type.label("Account Type"),
@@ -429,29 +460,30 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
                 FnScenarioData.project_name.label("Project Name"),
                 case(
                     (FnScenarioData.amount_type == 1, "Actual"),
-                    (FnScenarioData.amount_type == 0, "Projected"),
+                    (FnScenarioData.amount_type == 0, "Budget"),
                     else_="Unknown",
                 ).label("Amount Type"),
                 func.round(
-                        FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1),
-                        3,
-                    ).label("Amount"),
+                    FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1),
+                    3,
+                ).label("Amount"),
                 FnScenarioData.amount.label("base value"),
+                FnScenarioData.customer_name.label("Customer Name"),
                 FnScenarioData.change_value.label("changePrecentage"),
                 case(
-                        (func.extract("month", FnScenarioData.date) == 1, "January"),
-                        (func.extract("month", FnScenarioData.date) == 2, "February"),
-                        (func.extract("month", FnScenarioData.date) == 3, "March"),
-                        (func.extract("month", FnScenarioData.date) == 4, "April"),
-                        (func.extract("month", FnScenarioData.date) == 5, "May"),
-                        (func.extract("month", FnScenarioData.date) == 6, "June"),
-                        (func.extract("month", FnScenarioData.date) == 7, "July"),
-                        (func.extract("month", FnScenarioData.date) == 8, "August"),
-                        (func.extract("month", FnScenarioData.date) == 9, "September"),
-                        (func.extract("month", FnScenarioData.date) == 10, "October"),
-                        (func.extract("month", FnScenarioData.date) == 11, "November"),
-                        (func.extract("month", FnScenarioData.date) == 12, "December"),
-                    else_=""
+                    (func.extract("month", FnScenarioData.date) == 1, "January"),
+                    (func.extract("month", FnScenarioData.date) == 2, "February"),
+                    (func.extract("month", FnScenarioData.date) == 3, "March"),
+                    (func.extract("month", FnScenarioData.date) == 4, "April"),
+                    (func.extract("month", FnScenarioData.date) == 5, "May"),
+                    (func.extract("month", FnScenarioData.date) == 6, "June"),
+                    (func.extract("month", FnScenarioData.date) == 7, "July"),
+                    (func.extract("month", FnScenarioData.date) == 8, "August"),
+                    (func.extract("month", FnScenarioData.date) == 9, "September"),
+                    (func.extract("month", FnScenarioData.date) == 10, "October"),
+                    (func.extract("month", FnScenarioData.date) == 11, "November"),
+                    (func.extract("month", FnScenarioData.date) == 12, "December"),
+                    else_="",
                 ).label("Month"),
             )
             .join(
@@ -508,6 +540,7 @@ def update_scenario(
                 FnScenarioData.created_by == userid,
                 FnScenarioData.fn_scenario_id == scenarioid,
                 FnScenarioData.is_active == True,
+                FnScenarioData.amount_type == 0
             )
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
@@ -528,14 +561,16 @@ def update_scenario(
             updated_data_query = receive_query(
                 session.query(
                     FnScenarioData.fn_scenario_data_id.label("data_id"),
+                    func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
                     FnScenarioData.receipt_number.label("Receipt Number"),
                     FnScenarioData.business_unit.label("Business Unit"),
                     FnScenarioData.account_type.label("Account Type"),
                     FnScenarioData.account_subtype.label("Account SubType"),
                     FnScenarioData.project_name.label("Project Name"),
+                    FnScenarioData.customer_name.label("Customer Name"),
                     case(
                         (FnScenarioData.amount_type == 1, "Actual"),
-                        (FnScenarioData.amount_type == 0, "Projected"),
+                        (FnScenarioData.amount_type == 0, "Budget"),
                         else_="Unknown",
                     ).label("Amount Type"),
                     func.round(
@@ -544,7 +579,7 @@ def update_scenario(
                     ).label("Amount"),
                     FnScenarioData.amount.label("base value"),
                     FnScenarioData.change_value.label("changePrecentage"),
-                   case(
+                    case(
                         (func.extract("month", FnScenarioData.date) == 1, "January"),
                         (func.extract("month", FnScenarioData.date) == 2, "February"),
                         (func.extract("month", FnScenarioData.date) == 3, "March"),
@@ -557,8 +592,8 @@ def update_scenario(
                         (func.extract("month", FnScenarioData.date) == 10, "October"),
                         (func.extract("month", FnScenarioData.date) == 11, "November"),
                         (func.extract("month", FnScenarioData.date) == 12, "December"),
-                    else_=""
-                ).label("Month"),
+                        else_="",
+                    ).label("Month"),
                 )
                 .filter(dynamic_filter_condition)
                 .all()
@@ -659,6 +694,7 @@ def scenario_data_status_update(
         created_session and session.close()
     return stmt
 
+
 def save_scenario(userid, scenarioid, formid, session=None, created_session=False):
     stmt = {}
     try:
@@ -676,3 +712,7 @@ def save_scenario(userid, scenarioid, formid, session=None, created_session=Fals
     finally:
         created_session and session.close()
     return stmt
+
+
+def update_change_value():
+    ...

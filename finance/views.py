@@ -5,10 +5,9 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from rest_framework.views import APIView
-from .utils import create_response, data_formatter, format_df, alter_data, create_filter
+from .utils import create_response, format_df, create_filter
 from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
-from json import loads
 from .database.get_data import (
     create_form,
     create_user_data,
@@ -23,7 +22,8 @@ from .database.get_data import (
     get_user_scenario_new,
     update_scenario,
     save_scenario,
-    Session
+    update_change_value,
+    Session,
 )
 from time import perf_counter
 from pathlib import Path
@@ -43,6 +43,7 @@ class CreateHierarchy(APIView):
             userid = req.POST["userid"]
             orgid = req.POST["organizationId"]
         except Exception as e:
+            logger.info(f"KEY NOT FOUND {e}")
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
@@ -72,13 +73,15 @@ class CreateHierarchy(APIView):
             status = data["status"]
             formid = data["formid"]
         except Exception as e:
-        
+            logger.info(f"KEY NOT FOUND {e}")
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         try:
-            data = scenario_status_update(userid=userid, scenarioid=scenarioid, formid=formid, status=status)
-            meta={}
+            data = scenario_status_update(
+                userid=userid, scenarioid=scenarioid, formid=formid, status=status
+            )
+            meta = {}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
@@ -89,7 +92,6 @@ class CreateHierarchy(APIView):
             }
         create_response(data, **meta)
         return Response(constants.STATUS200, status=HTTP_200_OK)
-        
 
     def delete(self, req, format=None):
         try:
@@ -99,14 +101,16 @@ class CreateHierarchy(APIView):
             status = data["status"]
             formid = data["formid"]
         except Exception as e:
-        
+            logger.info(f"KEY NOT FOUND {e}")
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         try:
-            logger.info(F"{status} {type(status)}")
-            data = scenario_data_status_update(userid, scenarioid, formid, status, session=None, created_session=False)
-            meta={}
+            logger.info(f"{status} {type(status)}")
+            data = scenario_data_status_update(
+                userid, scenarioid, formid, status, session=None, created_session=False
+            )
+            meta = {}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
@@ -125,14 +129,15 @@ class CreateHierarchy(APIView):
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
                 df = format_df(df, formid=formid, userid=kwargs.get("userid"))
-                user_data = create_user_data(df, formid, userid=kwargs.get("userid"))
+                create_user_data(df, formid, userid=kwargs.get("userid"))
             else:
                 logger.info(f"Could not create form wih id -> {formid}")
 
         except Exception as e:
             logger.exception(e)
             raise e
-        return {"formid": formid} 
+        return {"formid": formid}
+
 
 class CreateScenario(APIView):
     def post(self, req, format=None):
@@ -143,23 +148,42 @@ class CreateScenario(APIView):
             scenario_decription = data["scenario_decription"]
             formid = data["formid"]
         except Exception as e:
+            logger.info(f"KEY NOT FOUND {e}")
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         data = None
         try:
-             with Session() as session:
+            with Session() as session:
                 start = perf_counter()
-                scenarioid, status = create_scenario(scenario_name, scenario_decription, formid, userid, session)
-                dataframe = get_user_data(formid=formid, userid=userid, session=session)
-                logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
+                scenarioid, status = create_scenario(
+                    scenario_name, scenario_decription, formid, userid, session
+                )
+                dataframe = get_user_data(
+                    formid=formid,
+                    userid=userid,
+                    scenarioid=scenarioid,
+                    migrate=True,
+                    session=session,
+                )
+                logger.info(
+                    f"time taken while saving scenario meta and fetching user data {perf_counter() - start}"
+                )
 
-                data = format_df(pd.DataFrame(dataframe), scenarioid=scenarioid, userid=userid)
-                logger.info(f"time taken while saving scenario meta and fetching user data {perf_counter() - start}")
-                create_user_data_scenario(df=data, scenarioid=scenarioid, session=session)
+                logger.info(f"{dataframe[0]}")
+
+                create_user_data_scenario(
+                    dataframe=dataframe, scenarioid=scenarioid, session=session
+                )
+                logger.info(f"time taken to migrate {perf_counter() - start}")
                 # user_scenario_data = get_user_scenario_new(scenarioid=scenarioid, formid=formid, session=session)
                 logger.info(f"created scenario with id {scenarioid}")
-                data = {"scenarioid":scenarioid, "scenario_name":scenario_name, "scenario_decription":scenario_decription, "scenario_status":status}
+                data = {
+                    "scenarioid": scenarioid,
+                    "scenario_name": scenario_name,
+                    "scenario_decription": scenario_decription,
+                    "scenario_status": status,
+                }
                 meta = {}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
@@ -170,52 +194,21 @@ class CreateScenario(APIView):
             }
         create_response(data, **meta)
         return Response(constants.STATUS200, status=HTTP_200_OK)
-    
-            
-        
 
 
-class UpdateChangeValue(APIView):
+class UpdateChangePrecentage(APIView):
     def post(self, req, format=None):
         data = req.data["data"]
         datalist = data["datalist"]
-        userid= data["userid"]
-        scenarioid= data["scenarioid"]
-        
+        userid = data["userid"]
+        scenarioid = data["scenarioid"]
+
         try:
             filters = create_filter(datalist=datalist)
             data = update_scenario(data, filters, userid=userid, scenarioid=scenarioid)
             logger.info(f"Calculation done")
-            meta =  {}
-            logger.info(f"alter data len {len(data)}")
-        except Exception as e:
-            logger.info(f"Exception in Alter Data -> {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
-            data = None
-        create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
-
-
-
-class AlterData(APIView):
-    def post(self, req, format=None):
-        data = req.data["data"]
-        datalist = data["datalist"]
-        userid= data["userid"]
-        formid= data["formid"]
-        dataframe = get_user_data(userid=userid, formid=formid)
-        df = pd.DataFrame(dataframe)
-        
-        try:
-            modified_dfs = alter_data(df, datalist=datalist)
-            logger.info(f"Calculation done")
-            result_df = pd.concat(modified_dfs, ignore_index=True)
-            data, meta = loads(result_df.drop(columns=["Date"]).to_json(orient="records")),{}
-            logger.info(f"alter data len {len(data)}")
+            meta = {}
+            logger.info(f"update percentage data len {len(data)}")
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
             meta = {
@@ -235,8 +228,8 @@ class SavesScenario(APIView):
         userid = data["userid"]
         formid = data["formid"]
         try:
-            data = save_scenario(formid=formid, scenarioid=scenarioid,userid=userid)
-            meta ={}
+            data = save_scenario(formid=formid, scenarioid=scenarioid, userid=userid)
+            meta = {}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")
             data = None
@@ -245,7 +238,7 @@ class SavesScenario(APIView):
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
-        create_response(data,**meta)
+        create_response(data, **meta)
         return Response(constants.STATUS200, status=HTTP_200_OK)
 
 
@@ -276,13 +269,13 @@ class FetchScenario(APIView):
         try:
             formid = req.data["data"]["formid"]
             userid = req.data["data"]["userid"]
-            scenario_names = fetch_scenario(formid=formid,userid=userid)
-            data, meta =  scenario_names, {}
+            scenario_names = fetch_scenario(formid=formid, userid=userid)
+            data, meta = scenario_names, {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             data = None
             meta = {
-                "error": str(e),
+                "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
@@ -299,7 +292,9 @@ class GetData(APIView):
             userid = req.data["data"]["userid"]
             start = perf_counter()
             data = get_user_data(formid=formid, userid=userid)
-            logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start} ")
+            logger.info(
+                f"time taken while fetching data for  {userid} is {perf_counter()-start} "
+            )
             meta = {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
@@ -310,24 +305,34 @@ class GetData(APIView):
             }
         create_response(data, **meta)
         return Response(constants.STATUS200, status=HTTP_200_OK)
-    
+
 
 class filterColumn(APIView):
     def post(self, req, format=None):
         data = {}
         try:
             logger.info(f"{req.data=}")
-            formid = req.data["data"]["formid"]
-            userid = req.data["data"]["userid"]
-            scenarioid = req.data["data"]["scenarioid"]
-            unit_value = req.data["data"]["unit"]
+            data = req.data["data"]
+            formid = data["formid"]
+            userid = data["userid"]
+            scenarioid = data["scenarioid"]
+            business_unit = data.get("unit")
+            year = data.get("year")
             start = perf_counter()
-            data = filter_column(scenarioid=scenarioid,formid=formid, userid=userid,value=unit_value)
-            data = { 
-                "column_name": data[0].keys(),
-                "row_names":data
+            data = filter_column(
+                scenarioid=scenarioid,
+                formid=formid,
+                userid=userid,
+                business_unit=business_unit,
+                year=year,
+            )
+            data = {
+                "column_name": data[0].keys() if len(data) > 1 else [],
+                "row_names": data,
             }
-            logger.info(f"time taken while fetching data for  {userid} is {perf_counter()-start}")
+            logger.info(
+                f"time taken while fetching data for  {userid} is {perf_counter()-start}"
+            )
             meta = {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
@@ -353,11 +358,45 @@ class GetScenario(APIView):
             data = get_user_scenario_new(scenarioid, formid=formid, session=None)
             data = {
                 "formid": formid,
-                "scenarioid":scenarioid,
-                "column_name": data[0].keys(),
-                "row_names":data
-            }            
-            logger.info(f"time taken after fetching and for {userid} is {perf_counter()-start} ")
+                "scenarioid": scenarioid,
+                "column_name": data[0].keys() if len(data) > 1 else [],
+                "row_names": data,
+            }
+            logger.info(
+                f"time taken after fetching and for {userid} is {perf_counter()-start} "
+            )
+            meta = {}
+        except Exception as e:
+            logger.exception(f"exception while fetching form names:  {e}")
+            meta = {
+                "error_message": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=HTTP_200_OK)
+
+
+class UpdateChangeValue(APIView):
+    def post(self, req, format=None):
+        data = {}
+        try:
+            logger.info(f"{req.data=}")
+            userid = req.data["data"]["userid"]
+            scenarioid = req.data["data"]["scenarioid"]
+            formid = req.data["data"]["formid"]
+            logger.info(f"{formid=} {scenarioid=} {userid=}")
+            start = perf_counter()
+            data = update_change_value(scenarioid, formid=formid, session=None)
+            data = {
+                "formid": formid,
+                "scenarioid": scenarioid,
+                "column_name": data[0].keys() if len(data) > 1 else [],
+                "row_names": data,
+            }
+            logger.info(
+                f"time taken after fetching and for {userid} is {perf_counter()-start} "
+            )
             meta = {}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
