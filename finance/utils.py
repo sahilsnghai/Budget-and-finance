@@ -65,7 +65,7 @@ def create_filter(datalist):
 
     for row in datalist:
         filters = {}
-        change_value = {"change_value": row["changePrecentage"]}
+        change_value = {"change_value": (row["changePrecentage"] / 100) + 1 }
 
         row["columns"] = [COLUMNS[column] for column in row["columns"]]
 

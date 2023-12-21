@@ -540,15 +540,33 @@ def update_scenario(
                 FnScenarioData.created_by == userid,
                 FnScenarioData.fn_scenario_id == scenarioid,
                 FnScenarioData.is_active == True,
-                FnScenarioData.amount_type == 0
             )
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
 
-            logger.info(f"Starting Updating")
+            update = receive_query(session.query(
+                ((
+                    -1
+                    + (
+                        (func.sum(FnScenarioData.amount) * update["change_value"])
+                        - func.sum(
+                            case((FnScenarioData.amount_type == 1, FnScenarioData.amount), else_=None)
+                        )
+                    )
+                    / func.sum(
+                        case((FnScenarioData.amount_type == 0, FnScenarioData.amount), else_=None)
+                    )
+                )
+                * 100).label("change_value")
+            ).filter_by(**filters).all())[0]
+
+            logger.info(f"Starting Updating {update=}")
+
+
             updated_data = (
                 session.query(FnScenarioData)
-                .filter(dynamic_filter_condition)
+                .filter(dynamic_filter_condition,
+                         FnScenarioData.amount_type == 0)
                 .update(update, synchronize_session="fetch")
             )
 
