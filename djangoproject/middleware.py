@@ -11,9 +11,10 @@ constants = Constants()
 
 def task_middleware(get_response):
     def middleware(req):
-        
+        logger.info(f"{req.path=}")
         logger.info(f"\n\n{req.headers=}\n\n")
         if req.path == "/apps/validate-password":
+            logger.info("genrating jwt")
             return get_response(req)
 
         # if process_req(req=req):
