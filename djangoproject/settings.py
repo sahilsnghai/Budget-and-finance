@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-pkttgz6y#n+v@rv8xpzph9k!a)z#o+kf3aczy$lqsm+f@kcf@-"
+SECRET_KEY = "pkttgz6y#n+v@rv8xpzph9k!a)z#o+kf3aczy$lqsm+f@kcf@-"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -33,11 +33,11 @@ DEBUG = False
 # LOGIN_URL = 'login'
 
 
-ALLOWED_HOSTS = ['.lumenore.com',"*"]
-
+ALLOWED_HOSTS = ['.lumenore.com',"*", "http://localhost:3000"]
+CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com',"https://test.testlume.in/"]
-CORS_ALLOWED_ORIGINS = ['https://*.lumenore.com',"http://localhost:8080","http://localhost:3001", "https://test.testlume.in/"]
-
+CORS_ALLOWED_ORIGINS = ('https://*.lumenore.com',"http://localhost:8080","http://localhost:3000", "https://test.testlume.in/")
+CORS_ORIGIN_WHITELIST = ("http://localhost:3000",)
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",

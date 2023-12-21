@@ -2,6 +2,7 @@ from djangoproject.main_logger import set_up_logging
 from djangoproject.constants import Constants
 from django.http import HttpResponse, HttpResponseForbidden
 from requests import get
+from django.conf import settings
 import jwt
 
 logger = set_up_logging()
@@ -12,6 +13,8 @@ def task_middleware(get_response):
     def middleware(req):
         
         logger.info(f"\n\n{req.headers=}\n\n")
+        if req.path == "/apps/validate-password":
+            return get_response(req)
 
         # if process_req(req=req):
         response = get_response(req)
@@ -81,6 +84,7 @@ def get_token(token, version=None):
         response = get(url, headers=headers).json()["data"]
         response = f'{token[0]} {response}' or token
     except Exception as e:
+        token = jwt.decode(token)
         print(f"error in getting bigget token {e}")
         response = token
     return response

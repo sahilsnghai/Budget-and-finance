@@ -3,6 +3,7 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
     HTTP_500_INTERNAL_SERVER_ERROR,
+    HTTP_401_UNAUTHORIZED
 )
 from rest_framework.views import APIView
 from .utils import create_response, format_df, create_filter
@@ -29,6 +30,9 @@ from time import perf_counter
 from pathlib import Path
 import pandas as pd
 
+import jwt
+from django.conf import settings
+from django.core.exceptions import ValidationError
 
 constants = Constants()
 logger = set_up_logging()
@@ -54,7 +58,7 @@ class CreateHierarchy(APIView):
                 df=pd.read_excel(file), userid=userid, orgid=orgid, filename=file.name
             )
             logger.info(f"time by hierarchy {perf_counter() - start}")
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             meta = {
@@ -63,7 +67,7 @@ class CreateHierarchy(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
     
     def put(self, req, format=None):
         try:
@@ -81,7 +85,7 @@ class CreateHierarchy(APIView):
             data = scenario_status_update(
                 userid=userid, scenarioid=scenarioid, formid=formid, status=status
             )
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
@@ -91,7 +95,7 @@ class CreateHierarchy(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
     def delete(self, req, format=None):
         try:
@@ -110,7 +114,7 @@ class CreateHierarchy(APIView):
             data = scenario_data_status_update(
                 userid, scenarioid, formid, status, session=None, created_session=False
             )
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
@@ -120,7 +124,7 @@ class CreateHierarchy(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
     @staticmethod
     def save_matrix(df, filename, **kwargs):
@@ -184,7 +188,7 @@ class CreateScenario(APIView):
                     "scenario_decription": scenario_decription,
                     "scenario_status": status,
                 }
-                meta = {}
+                meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             meta = {
@@ -193,7 +197,7 @@ class CreateScenario(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class UpdateChangePrecentage(APIView):
@@ -207,7 +211,7 @@ class UpdateChangePrecentage(APIView):
             filters = create_filter(datalist=datalist)
             data = update_scenario(data, filters, userid=userid, scenarioid=scenarioid)
             logger.info(f"Calculation done")
-            meta = {}
+            meta = {"code":HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
@@ -218,7 +222,7 @@ class UpdateChangePrecentage(APIView):
             }
             data = None
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class SavesScenario(APIView):
@@ -229,7 +233,7 @@ class SavesScenario(APIView):
         formid = data["formid"]
         try:
             data = save_scenario(formid=formid, scenarioid=scenarioid, userid=userid)
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")
             data = None
@@ -239,7 +243,7 @@ class SavesScenario(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class FetchFrom(APIView):
@@ -250,7 +254,7 @@ class FetchFrom(APIView):
             orgid = req.data["data"]["organizationId"]
             logger.info(f"{userid=} {orgid=}")
             data = fetch_from(userid=userid, orgid=orgid)
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -259,7 +263,7 @@ class FetchFrom(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class FetchScenario(APIView):
@@ -270,7 +274,7 @@ class FetchScenario(APIView):
             formid = req.data["data"]["formid"]
             userid = req.data["data"]["userid"]
             scenario_names = fetch_scenario(formid=formid, userid=userid)
-            data, meta = scenario_names, {}
+            data, meta = scenario_names, {"code":HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             data = None
@@ -280,7 +284,7 @@ class FetchScenario(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class GetData(APIView):
@@ -295,7 +299,7 @@ class GetData(APIView):
             logger.info(
                 f"time taken while fetching data for  {userid} is {perf_counter()-start} "
             )
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -304,7 +308,7 @@ class GetData(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class filterColumn(APIView):
@@ -333,7 +337,7 @@ class filterColumn(APIView):
             logger.info(
                 f"time taken while fetching data for  {userid} is {perf_counter()-start}"
             )
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -342,7 +346,7 @@ class filterColumn(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class GetScenario(APIView):
@@ -365,7 +369,7 @@ class GetScenario(APIView):
             logger.info(
                 f"time taken after fetching and for {userid} is {perf_counter()-start} "
             )
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -374,7 +378,7 @@ class GetScenario(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class UpdateChangeValue(APIView):
@@ -397,7 +401,7 @@ class UpdateChangeValue(APIView):
             logger.info(
                 f"time taken after fetching and for {userid} is {perf_counter()-start} "
             )
-            meta = {}
+            meta = {"code":HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -406,4 +410,53 @@ class UpdateChangeValue(APIView):
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=HTTP_200_OK)
+        return Response(constants.STATUS200, status=meta["code"])
+
+
+class TokenAPIView(APIView):
+    def post(self, req):
+        logger.info(f"{req.data}")
+        try:
+            data = req.data.get('data')
+            email = data["username"] 
+            password = data["password"]
+        except KeyError as e:
+            logger.info(f"KEY NOT FOUND {e}")
+            return Response(
+                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+            )
+
+        data = None
+        logger.info(f"{email=} {password=}")
+        try:
+            if email == "ssjain@lumenore.com":
+
+                payload = {
+                    'email': email,
+                    'password':password,
+                    'user_id': 10910,
+                    'organization_id':1857
+                }
+                token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+                data = {"token": token, **payload}
+                data.pop("password")
+            else:
+                raise ValidationError("UNAUTHORIZED")
+            meta = {"code":HTTP_200_OK}
+        except ValidationError as e:
+            logger.exception(f"exception while fetching form names:  {e}")
+            meta = {
+                "error_message": str(e),
+                "error": True,
+                "code": HTTP_401_UNAUTHORIZED,
+            }
+        except Exception as e:
+            logger.exception(f"exception while fetching form names:  {e}")
+            meta = {
+                "error_message": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=meta["code"])
