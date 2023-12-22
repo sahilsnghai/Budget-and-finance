@@ -407,28 +407,28 @@ class UpdateBudget(APIView):
 
 
 class UpdateChangeValue(APIView):
-    def post(self, req, format=None):...
-#         data = req.data["data"]
-#         datalist = data["datalist"]
-#         userid = data["userid"]
-#         scenarioid = data["scenarioid"]
+    def post(self, req, format=None):
+        data = req.data["data"]
+        datalist = data["datalist"]
+        userid = data["userid"]
+        scenarioid = data["scenarioid"]
 
-#         try:
-#             filters = create_filter(datalist=datalist)
-#             data = update_change_value(data, filters, userid=userid, scenarioid=scenarioid)
-#             logger.info(f"Calculation done")
-#             meta = {"code":HTTP_200_OK}
-#             logger.info(f"update percentage data len {len(data)}")
-#         except Exception as e:
-#             logger.info(f"Exception in Alter Data -> {e}")
-#             meta = {
-#                 "error_message": str(e),
-#                 "error": True,
-#                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
-#             }
-#             data = None
-#         create_response(data, **meta)
-#         return Response(constants.STATUS200, status=meta["code"])
+        try:
+            filters = create_filter(datalist=datalist)
+            data = update_change_value(data, filters, userid=userid, scenarioid=scenarioid)
+            logger.info(f"Calculation done")
+            meta = {"code":HTTP_200_OK}
+            logger.info(f"update percentage data len {len(data)}")
+        except Exception as e:
+            logger.info(f"Exception in Alter Data -> {e}")
+            meta = {
+                "error_message": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+            data = None
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=meta["code"])
 
 
 class TokenAPIView(APIView):

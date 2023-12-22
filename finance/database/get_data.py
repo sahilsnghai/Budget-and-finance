@@ -741,7 +741,7 @@ def save_scenario(userid, scenarioid, formid, session=None, created_session=Fals
     return stmt
 
 
-def update_change_value(data, filters_list, userid=None, scenarioid=None):
+def update_change_value(data, filters_list, userid=None, scenarioid=None, session=None, created_session=None):
     updated_data_list = []
 
     try:
@@ -751,7 +751,9 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None):
 
         logger.info("Value Fetching user data")
         start = perf_counter()
-        for filters, update in filters_list:
+        logger.info(data)
+
+        for filters, changed in filters_list:
             logger.info(f"Value Creating Filters")
 
             filter_conditions = [
@@ -768,113 +770,34 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None):
                 FnScenarioData.created_by == userid,
                 FnScenarioData.fn_scenario_id == scenarioid,
                 FnScenarioData.is_active == True,
-                or_(
+                and_(
                     func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y%m%d")
-                    )
-                    == data.get("date"),
+                        FnScenarioData.date, data.get("dateformat", "%Y%m")
+                    ) == data.get("date"),
                     func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y%m%d")
-                    )
-                    != None,
+                        FnScenarioData.date, data.get("dateformat", "%Y%m")
+                    ) != None,
                 ),
             )
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
 
-            update = receive_query(
+            diff_query = receive_query(
                 session.query(
-                    (
-                        (
-                            -1
-                            + (
-                                (
-                                    func.sum(FnScenarioData.amount)
-                                    * update["change_value"]
-                                )
-                                - func.sum(
-                                    case(
-                                        (
-                                            FnScenarioData.amount_type == 1,
-                                            FnScenarioData.amount,
-                                        ),
-                                        else_=None,
-                                    )
-                                )
-                            )
-                            / func.sum(
-                                case(
-                                    (
-                                        FnScenarioData.amount_type == 0,
-                                        FnScenarioData.amount,
-                                    ),
-                                    else_=None,
-                                )
-                            )
-                        )
-                        * 100
-                    ).label("change_value")
+                    ((changed["change_value"] - func.sum(FnScenarioData.amount)) / func.count()).label("diff"),
                 )
-                .filter(dynamic_filter_condition)
-                .all()
-            )[0]
+                .filter(
+                  dynamic_filter_condition
+                ).all())[0]
+            
+            logger.info(f"{diff_query=}")
 
-            logger.info(f"Starting Updating {update=}")
-
-            updated_data = (
-                session.query(FnScenarioData)
-                .filter(dynamic_filter_condition, FnScenarioData.amount_type == 0)
-                .update(update, synchronize_session="fetch")
-            )
+            session.query(FnScenarioData)\
+            .filter(dynamic_filter_condition)\
+            .update({"amount": FnScenarioData.amount + diff_query["diff"]}, synchronize_session="fetch")
 
             session.commit()
-            logger.info(f"Updation done {updated_data}")
 
-            logger.info(f"Number of rows updated: {updated_data}")
-
-            logger.info(f"Fetchning data")
-            updated_data_query = receive_query(
-                session.query(
-                    FnScenarioData.fn_scenario_data_id.label("data_id"),
-                    func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
-                    FnScenarioData.receipt_number.label("Receipt Number"),
-                    FnScenarioData.business_unit.label("Business Unit"),
-                    FnScenarioData.account_type.label("Account Type"),
-                    FnScenarioData.account_subtype.label("Account SubType"),
-                    FnScenarioData.project_name.label("Project Name"),
-                    FnScenarioData.customer_name.label("Customer Name"),
-                    case(
-                        (FnScenarioData.amount_type == 1, "Actual"),
-                        (FnScenarioData.amount_type == 0, "Budget"),
-                        else_="Unknown",
-                    ).label("Amount Type"),
-                    func.round(
-                        FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1),
-                        3,
-                    ).label("Amount"),
-                    FnScenarioData.amount.label("base value"),
-                    FnScenarioData.change_value.label("changePrecentage"),
-                    case(
-                        (func.extract("month", FnScenarioData.date) == 1, "January"),
-                        (func.extract("month", FnScenarioData.date) == 2, "February"),
-                        (func.extract("month", FnScenarioData.date) == 3, "March"),
-                        (func.extract("month", FnScenarioData.date) == 4, "April"),
-                        (func.extract("month", FnScenarioData.date) == 5, "May"),
-                        (func.extract("month", FnScenarioData.date) == 6, "June"),
-                        (func.extract("month", FnScenarioData.date) == 7, "July"),
-                        (func.extract("month", FnScenarioData.date) == 8, "August"),
-                        (func.extract("month", FnScenarioData.date) == 9, "September"),
-                        (func.extract("month", FnScenarioData.date) == 10, "October"),
-                        (func.extract("month", FnScenarioData.date) == 11, "November"),
-                        (func.extract("month", FnScenarioData.date) == 12, "December"),
-                        else_="",
-                    ).label("Month"),
-                )
-                .filter(dynamic_filter_condition)
-                .all()
-            )
-            logger.info(f"len of updated_data_query {len(updated_data_query)}")
-            updated_data_list.extend(updated_data_query)
         logger.info(f"Scenario data {len(updated_data_list)}")
         logger.info(f"Time taken by fetching scenario is {perf_counter() - start}")
         logger.info("User data fetch with ID:")

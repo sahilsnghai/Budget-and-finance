@@ -62,6 +62,7 @@ def create_filter(datalist):
     logger.info(f"Creating filters.")
     filters_list = []
     changes_list = []
+    change_value = {}
 
     for row in datalist:
         filters = {}
@@ -69,8 +70,9 @@ def create_filter(datalist):
             change_value = {"change_value": (row["changePrecentage"] / 100) + 1 }
         elif row.get("changeValue"):
             change_value = {"change_value": row["changeValue"]}
-        elif row.get("amount_type"):
-            change_value = {"amount_type": row["amount_type"]}
+        
+        if row.get("amount_type") is not None:
+            filters.update({"amount_type": row["amount_type"]})
 
         row["columns"] = [COLUMNS[column] for column in row["columns"]]
 
