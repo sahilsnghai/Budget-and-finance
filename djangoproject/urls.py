@@ -17,7 +17,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from .constants import Constants
-from finance.views import TokenAPIView
 
 contants = Constants()
 
@@ -25,5 +24,4 @@ urlpatterns = [
     path("lumenore/path/administrator", admin.site.urls),
     path("apps/task/", include("taskmanager.urls")),
     path("apps/finance/", include("finance.urls")),
-    path('apps/validate-password', TokenAPIView.as_view(), name='token_obtain_pair'),
 ]

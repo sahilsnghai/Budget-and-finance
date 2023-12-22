@@ -156,7 +156,6 @@ def fetch_scenario(formid, userid):
                 .filter(
                     FnScenario.fn_form_id == formid,
                     FnScenario.created_by == userid,
-                    FnScenario.is_active == True,
                 )
                 .all()
             )

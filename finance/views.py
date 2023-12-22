@@ -436,30 +436,22 @@ class TokenAPIView(APIView):
         logger.info(f"{req.data}")
         try:
             data = req.data.get('data')
-            email = data["username"] 
-            password = data["password"]
         except KeyError as e:
             logger.info(f"KEY NOT FOUND {e}")
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
-
-        data = None
-        logger.info(f"{email=} {password=}")
         try:
-            if email == "ssjain@lumenore.com":
+            payload = {
+                'email': data.get("email"),
+                'user_id': data.get("clientId")
+            }
+            token = jwt.encode(payload, data.get("clientSecret"), algorithm='HS256')
+            
 
-                payload = {
-                    'email': email,
-                    'password':password,
-                    'user_id': 10910,
-                    'organization_id':1857
-                }
-                token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
-                data = {"token": token, **payload}
-                data.pop("password")
-            else:
-                raise ValidationError("UNAUTHORIZED")
+            decoded = jwt.decode(token, data.get("clientSecret"), algorithms='HS256')
+            data=token
+            logger.info(f"{decoded=}")
             meta = {"code":HTTP_200_OK}
         except ValidationError as e:
             logger.exception(f"exception while fetching form names:  {e}")
