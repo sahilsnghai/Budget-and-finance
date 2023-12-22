@@ -792,13 +792,13 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
             
             logger.info(f"{diff_query=}")
 
-            session.query(FnScenarioData)\
+            updated_data_list = session.query(FnScenarioData)\
             .filter(dynamic_filter_condition)\
             .update({"amount": FnScenarioData.amount + diff_query["diff"]}, synchronize_session="fetch")
 
             session.commit()
 
-        logger.info(f"Scenario data {len(updated_data_list)}")
+        logger.info(f"Scenario data {updated_data_list}")
         logger.info(f"Time taken by fetching scenario is {perf_counter() - start}")
         logger.info("User data fetch with ID:")
     except SQLAlchemyError as e:

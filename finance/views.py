@@ -418,7 +418,7 @@ class UpdateChangeValue(APIView):
             data = update_change_value(data, filters, userid=userid, scenarioid=scenarioid)
             logger.info(f"Calculation done")
             meta = {"code":HTTP_200_OK}
-            logger.info(f"update percentage data len {len(data)}")
+            logger.info(f"update percentage data len {data}")
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
             meta = {
