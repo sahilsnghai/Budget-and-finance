@@ -65,7 +65,12 @@ def create_filter(datalist):
 
     for row in datalist:
         filters = {}
-        change_value = {"change_value": (row["changePrecentage"] / 100) + 1 }
+        if row.get("changePrecentage"):
+            change_value = {"change_value": (row["changePrecentage"] / 100) + 1 }
+        elif row.get("changeValue"):
+            change_value = {"change_value": row["changeValue"]}
+        elif row.get("amount_type"):
+            change_value = {"amount_type": row["amount_type"]}
 
         row["columns"] = [COLUMNS[column] for column in row["columns"]]
 

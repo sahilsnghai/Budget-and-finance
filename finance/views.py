@@ -24,6 +24,7 @@ from .database.get_data import (
     update_scenario,
     save_scenario,
     update_change_value,
+    update_amount_type,
     Session,
 )
 from time import perf_counter
@@ -380,37 +381,54 @@ class GetScenario(APIView):
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["code"])
 
-
-class UpdateChangeValue(APIView):
+class UpdateBudget(APIView):
     def post(self, req, format=None):
-        data = {}
+        data = req.data["data"]
+        amount_type = data["amount_type"]
+        date = data["date"]
+        userid = data["userid"]
+        scenarioid = data["scenarioid"]
+
         try:
-            logger.info(f"{req.data=}")
-            userid = req.data["data"]["userid"]
-            scenarioid = req.data["data"]["scenarioid"]
-            formid = req.data["data"]["formid"]
-            logger.info(f"{formid=} {scenarioid=} {userid=}")
-            start = perf_counter()
-            data = update_change_value(scenarioid, formid=formid, session=None)
-            data = {
-                "formid": formid,
-                "scenarioid": scenarioid,
-                "column_name": data[0].keys() if len(data) > 1 else [],
-                "row_names": data,
-            }
-            logger.info(
-                f"time taken after fetching and for {userid} is {perf_counter()-start} "
-            )
+            data =  update_amount_type(date, amount_type, userid=userid, scenarioid=scenarioid)
+            logger.info(f"Calculation done")
             meta = {"code":HTTP_200_OK}
+            logger.info(f"update percentage data len {data}")
         except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
+            logger.info(f"Exception in Alter Data -> {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
+            data = None
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["code"])
+
+
+# class UpdateChangeValue(APIView):
+#     def post(self, req, format=None):
+#         data = req.data["data"]
+#         datalist = data["datalist"]
+#         userid = data["userid"]
+#         scenarioid = data["scenarioid"]
+
+#         try:
+#             filters = create_filter(datalist=datalist)
+#             data = update_change_value(data, filters, userid=userid, scenarioid=scenarioid)
+#             logger.info(f"Calculation done")
+#             meta = {"code":HTTP_200_OK}
+#             logger.info(f"update percentage data len {len(data)}")
+#         except Exception as e:
+#             logger.info(f"Exception in Alter Data -> {e}")
+#             meta = {
+#                 "error_message": str(e),
+#                 "error": True,
+#                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
+#             }
+#             data = None
+#         create_response(data, **meta)
+#         return Response(constants.STATUS200, status=meta["code"])
 
 
 class TokenAPIView(APIView):

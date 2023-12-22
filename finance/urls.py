@@ -9,7 +9,8 @@ from .views import (
     GetScenario,
     CreateScenario,
     UpdateChangePrecentage,
-    UpdateChangeValue
+    UpdateChangeValue,
+    UpdateBudget
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -25,6 +26,7 @@ urlpatterns = [
     path("get-scenario", GetScenario.as_view(), name="get-scenario"),
     path("create-scenario", CreateScenario.as_view(), name="create-scenario"),
     path("update-scenario", UpdateChangePrecentage.as_view(), name="update-scenario"),
-    path("update-value", UpdateChangeValue.as_view(), name="update-scenario"),
+    path("update-value", UpdateChangeValue.as_view(), name="update-value"),
+    path("update-actual", UpdateBudget.as_view(), name="update-actual"),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
