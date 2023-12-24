@@ -21,7 +21,7 @@ from .database.get_data import (
     scenario_data_status_update,
     scenario_status_update,
     get_user_scenario_new,
-    update_scenario,
+    update_scenario_percentage,
     save_scenario,
     update_change_value,
     update_amount_type,
@@ -31,7 +31,7 @@ from time import perf_counter
 from pathlib import Path
 import pandas as pd
 
-import jwt
+from requests import post
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
@@ -210,7 +210,7 @@ class UpdateChangePrecentage(APIView):
 
         try:
             filters = create_filter(datalist=datalist)
-            data = update_scenario(data, filters, userid=userid, scenarioid=scenarioid)
+            data = update_scenario_percentage(data, filters, userid=userid, scenarioid=scenarioid)
             logger.info(f"Calculation done")
             meta = {"code":HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
@@ -435,23 +435,29 @@ class TokenAPIView(APIView):
     def post(self, req):
         logger.info(f"{req.data}")
         try:
-            data = req.data.get('data')
+            data = req.data
         except KeyError as e:
             logger.info(f"KEY NOT FOUND {e}")
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         try:
-            payload = {
-                'email': data.get("email"),
-                'user_id': data.get("clientId")
-            }
-            token = jwt.encode(payload, data.get("clientSecret"), algorithm='HS256')
-            
+            url = constants.get_config("parameters", "identity-url") + "/jwt/generate-jwt"
+            resp = post(url, json=data)
+            token = resp.json()["data"]
 
-            decoded = jwt.decode(token, data.get("clientSecret"), algorithms='HS256')
-            data=token
-            logger.info(f"{decoded=}")
+            endpoint = constants.get_config("parameters", "identity-url") + "/jwt/sso-lumenore"
+            response = post(endpoint, headers={"Content-Type": "application/x-www-form-urlencoded"}, data={
+                "jwt": token,
+                "return_to": constants.get_config("parameters", "redirectUrl"),
+                "clientId": data["data"].get("clientId")
+            })
+
+            if response.status_code == 200:
+                data = response.text
+                logger.info(data)
+            else:
+                logger.exception(f"Error: {response.status_code} - {response.text}")        
             meta = {"code":HTTP_200_OK}
         except ValidationError as e:
             logger.exception(f"exception while fetching form names:  {e}")

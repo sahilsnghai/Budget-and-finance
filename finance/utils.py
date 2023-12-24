@@ -31,16 +31,17 @@ def create_response(data, code=HTTP_200_OK, error=False, **kwags):
     if kwags.get("error_message", None) and error:
         constants.STATUS200["error_message"] = kwags.get("error_message")
     else:
-        constants.STATUS200.pop("error_message",None)
+        constants.STATUS200.pop("error_message", None)
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
     logger.info(f"Session Status : {engine.pool.status()}")
     engine.pool.dispose()
 
+
 def format_df(df, *args, **kwargs):
     logger.info(f"Before renaming: {df.columns}")
     df = df.rename(columns=COLUMNS)
-    if common_columns := set(["data_id","base value"]).intersection(df.columns):
+    if common_columns := set(["data_id", "base value"]).intersection(df.columns):
         logger.info(common_columns)
         df = df.drop(columns=common_columns)
     logger.info(f"updated columns :\n{df.columns}")
@@ -67,10 +68,14 @@ def create_filter(datalist):
     for row in datalist:
         filters = {}
         if row.get("changePrecentage"):
-            change_value = {"change_value": (row["changePrecentage"] / 100) + 1 }
+            change_value = {"change_value": (row["changePrecentage"] / 100) + 1}
         elif row.get("changeValue"):
-            change_value = {"change_value": row["changeValue"]}
-        
+            change_value = {
+                "change_value": row["changeValue"],
+                "date": row["date"],
+                "dateformat": row.get("dateformat", "%Y%m"),
+            }
+
         if row.get("amount_type") is not None:
             filters.update({"amount_type": row["amount_type"]})
 
@@ -85,6 +90,4 @@ def create_filter(datalist):
     logger.info(changes_list)
     logger.info(f"Filters created.")
 
-
     return zip(filters_list, changes_list)
-

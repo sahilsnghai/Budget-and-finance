@@ -510,7 +510,7 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
     return scenario_data
 
 
-def update_scenario(
+def update_scenario_percentage(
     data, filters_list, userid, scenarioid, session=None, created_session=False
 ):
     updated_data_list = []
@@ -542,11 +542,11 @@ def update_scenario(
                 FnScenarioData.is_active == True,
                 or_(
                     func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y%m%d")
+                        FnScenarioData.date, data.get("dateformat", "%Y")
                     )
                     == data.get("date"),
                     func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y%m%d")
+                        FnScenarioData.date, data.get("dateformat", "%Y")
                     )
                     != None,
                 ),
@@ -579,7 +579,6 @@ def update_scenario(
             )
 
             session.commit()
-            logger.info(f"Updation done {updated_data}")
 
             logger.info(f"Number of rows updated: {updated_data}")
 
@@ -759,7 +758,7 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
                 getattr(FnScenarioData, column).ilike(f"{column_value}")
                 for column, column_value in filters.items()
             ]
-
+            logger.info(f"Unchanged {changed=}")
             logger.info(f"Value Filters Done")
 
             logger.info(f"Value Creating Dynamic Filters value")
@@ -771,15 +770,16 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
                 FnScenarioData.is_active == True,
                 and_(
                     func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y%m")
-                    ) == data.get("date"),
+                        FnScenarioData.date, changed.get("dateformat", "%Y%m")
+                    ) == changed.pop("date"),
                     func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y%m")
+                        FnScenarioData.date, changed.pop("dateformat", "%Y%m")
                     ) != None,
                 ),
             )
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
+            logger.info(f"{changed=}")
 
             diff_query = receive_query(
                 session.query(
