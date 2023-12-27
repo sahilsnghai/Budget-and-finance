@@ -59,7 +59,7 @@ class CreateHierarchy(APIView):
                 df=pd.read_excel(file), userid=userid, orgid=orgid, filename=file.name
             )
             logger.info(f"time by hierarchy {perf_counter() - start}")
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             meta = {
@@ -69,7 +69,7 @@ class CreateHierarchy(APIView):
             }
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["code"])
-    
+
     def put(self, req, format=None):
         try:
             data = req.data["data"]
@@ -86,7 +86,7 @@ class CreateHierarchy(APIView):
             data = scenario_status_update(
                 userid=userid, scenarioid=scenarioid, formid=formid, status=status
             )
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
@@ -115,7 +115,7 @@ class CreateHierarchy(APIView):
             data = scenario_data_status_update(
                 userid, scenarioid, formid, status, session=None, created_session=False
             )
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             data = {}
@@ -189,7 +189,7 @@ class CreateScenario(APIView):
                     "scenario_decription": scenario_decription,
                     "scenario_status": status,
                 }
-                meta = {"code":HTTP_200_OK}
+                meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
             meta = {
@@ -210,9 +210,11 @@ class UpdateChangePrecentage(APIView):
 
         try:
             filters = create_filter(datalist=datalist)
-            data = update_scenario_percentage(data, filters, userid=userid, scenarioid=scenarioid)
+            data = update_scenario_percentage(
+                data, filters, userid=userid, scenarioid=scenarioid
+            )
             logger.info(f"Calculation done")
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
@@ -234,7 +236,7 @@ class SavesScenario(APIView):
         formid = data["formid"]
         try:
             data = save_scenario(formid=formid, scenarioid=scenarioid, userid=userid)
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")
             data = None
@@ -255,7 +257,7 @@ class FetchFrom(APIView):
             orgid = req.data["data"]["organizationId"]
             logger.info(f"{userid=} {orgid=}")
             data = fetch_from(userid=userid, orgid=orgid)
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -275,7 +277,7 @@ class FetchScenario(APIView):
             formid = req.data["data"]["formid"]
             userid = req.data["data"]["userid"]
             scenario_names = fetch_scenario(formid=formid, userid=userid)
-            data, meta = scenario_names, {"code":HTTP_200_OK}
+            data, meta = scenario_names, {"code": HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             data = None
@@ -300,7 +302,7 @@ class GetData(APIView):
             logger.info(
                 f"time taken while fetching data for  {userid} is {perf_counter()-start} "
             )
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -338,7 +340,7 @@ class filterColumn(APIView):
             logger.info(
                 f"time taken while fetching data for  {userid} is {perf_counter()-start}"
             )
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -370,7 +372,7 @@ class GetScenario(APIView):
             logger.info(
                 f"time taken after fetching and for {userid} is {perf_counter()-start} "
             )
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             meta = {
@@ -381,6 +383,7 @@ class GetScenario(APIView):
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["code"])
 
+
 class UpdateBudget(APIView):
     def post(self, req, format=None):
         data = req.data["data"]
@@ -390,9 +393,11 @@ class UpdateBudget(APIView):
         scenarioid = data["scenarioid"]
 
         try:
-            data =  update_amount_type(date, amount_type, userid=userid, scenarioid=scenarioid)
+            data = update_amount_type(
+                date, amount_type, userid=userid, scenarioid=scenarioid
+            )
             logger.info(f"Calculation done")
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
@@ -415,9 +420,11 @@ class UpdateChangeValue(APIView):
 
         try:
             filters = create_filter(datalist=datalist)
-            data = update_change_value(data, filters, userid=userid, scenarioid=scenarioid)
+            data = update_change_value(
+                data, filters, userid=userid, scenarioid=scenarioid
+            )
             logger.info(f"Calculation done")
-            meta = {"code":HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
             logger.info(f"Exception in Alter Data -> {e}")
@@ -432,47 +439,51 @@ class UpdateChangeValue(APIView):
 
 
 class TokenAPIView(APIView):
-    def post(self, req):
-        logger.info(f"{req.data}")
+    def get(self, req):
         try:
-            data = req.data
+            orgid = req.GET["organizationId"]
+            email = req.GET["email"]
         except KeyError as e:
-            logger.info(f"KEY NOT FOUND {e}")
+            logger.info(f"{req.GET=}")
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
-        try:
-            url = constants.get_config("parameters", "identity-url") + "/jwt/generate-jwt"
-            resp = post(url, json=data)
-            token = resp.json()["data"]
 
-            endpoint = constants.get_config("parameters", "identity-url") + "/jwt/sso-lumenore"
-            response = post(endpoint, headers={"Content-Type": "application/x-www-form-urlencoded"}, data={
+        payload = {
+            "clientSecret": settings.SECRET_CLIENT, 
+            "clientId": settings.SECRET_CLIENTID, 
+            "email": email
+                   }
+        
+        logger.info(f"{payload=}")
+        
+        resp = post(
+            constants.get_config("parameters", "identity-url") + "/jwt/generate-jwt",
+            headers= {
+            'Content-Type': 'application/json',
+            },
+            json={"data": payload},
+        )
+
+        logger.info(f"{resp=}")
+        token = resp.json()["data"]
+
+        response = post(
+            constants.get_config("parameters", "identity-url") + "/jwt/sso-lumenore",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
                 "jwt": token,
                 "return_to": constants.get_config("parameters", "redirectUrl"),
-                "clientId": data["data"].get("clientId")
-            })
+                "clientId": settings.SECRET_CLIENTID,
+            },
+        )
 
-            if response.status_code == 200:
-                data = response.text
-                logger.info(data)
-            else:
-                logger.exception(f"Error: {response.status_code} - {response.text}")        
-            meta = {"code":HTTP_200_OK}
-        except ValidationError as e:
-            logger.exception(f"exception while fetching form names:  {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_401_UNAUTHORIZED,
-            }
-        except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
-        
+        if response.status_code == 200:
+            data = response.text
+            logger.info(data)
+        else:
+            logger.exception(f"Error: {response.status_code} - {response.text}")
+
+        meta = {"code": HTTP_200_OK}
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["code"])
