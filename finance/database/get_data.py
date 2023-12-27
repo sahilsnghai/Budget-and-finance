@@ -793,7 +793,7 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
 
             updated_data_list = session.query(FnScenarioData)\
             .filter(dynamic_filter_condition)\
-            .update({"amount": FnScenarioData.amount + diff_query["diff"]}, synchronize_session="fetch")
+            .update({"amount": FnScenarioData.amount + diff_query["diff"], "change_value": 0}, synchronize_session="fetch")
 
             session.commit()
 
