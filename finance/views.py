@@ -458,7 +458,7 @@ class TokenAPIView(APIView):
         logger.info(f"{payload=}")
         
         resp = post(
-            constants.get_config("parameters", "identity-url") + "/jwt/generate-jwt",
+            constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/generate-jwt",
             headers= {
             'Content-Type': 'application/json',
             },
@@ -469,11 +469,11 @@ class TokenAPIView(APIView):
         token = resp.json()["data"]
 
         response = post(
-            constants.get_config("parameters", "identity-url") + "/jwt/sso-lumenore",
+            constants.get_config("parameters", "identityUrl") + "/api/secure//jwt/sso-lumenore",
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             data={
                 "jwt": token,
-                "return_to": constants.get_config("parameters", "redirectUrl"),
+                "return_to": constants.get_config("parameters", "financeAppRedirectUrl"),
                 "clientId": settings.SECRET_CLIENTID,
             },
         )
