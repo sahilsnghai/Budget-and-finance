@@ -452,29 +452,32 @@ class TokenAPIView(APIView):
             payload = {
                 "clientSecret": settings.SECRET_CLIENT, 
                 "clientId": settings.SECRET_CLIENTID, 
-                "email": email
-                    }
+                "email": email }
             
             logger.info(f"{payload=}")
             
+            url = constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/generate-jwt"
+            logger.info(f"{url=}")
             resp = post(
-                constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/generate-jwt",
+                url,
                 headers= {
                 'Content-Type': 'application/json',
                 },
                 json={"data": payload},
             )
-
-            logger.info(f"{resp=}")
-
             token = resp.json()["data"]
-
+            
+            logger.info(f"{resp=} {token=}")
+            
+            url = constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/sso-lumenore"
+            logger.info(f"{url=}")
+            
             response = post(
-                constants.get_config("parameters", "identityUrl") + "/api/secure//jwt/sso-lumenore",
+                url,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
                     "jwt": token,
-                    "return_to": constants.get_config("parameters", "financeAppRedirectUrl"),
+                    "return_to": constants.get_config("parameters", "financeAppRedirectUrl") + "/",
                     "clientId": settings.SECRET_CLIENTID,
                 },
             )
