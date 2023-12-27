@@ -59,43 +59,6 @@ def create_user_data(df, formid, userid):
             session.bulk_insert_mappings(FnUserData, data)
             session.commit()
 
-            # user_data = receive_query(
-            #     session.query(
-            #         FnUserData.fn_user_data_id.label("data_id"),
-            #         FnUserData.date.label("Date"),
-            #         FnUserData.receipt_number.label("Receipt Number"),
-            #         FnUserData.business_unit.label("Business Unit"),
-            #         FnUserData.account_type.label("Account Type"),
-            #         FnUserData.account_subtype.label("Account SubType"),
-            #         FnUserData.project_name.label("Project Name"),
-            #         case(
-            #             (FnUserData.amount_type == 1, "Actual"),
-            #             (FnUserData.amount_type == 0, "Budget"),
-            #             else_="Unknown",
-            #         ).label("Amount Type"),
-            #         FnUserData.amount.label("Amount"),
-            #         FnUserData.amount.label("base value"),
-            #         case(
-            #             (func.extract("month", FnUserData.date) == 1, "January"),
-            #             (func.extract("month", FnUserData.date) == 2, "February"),
-            #             (func.extract("month", FnUserData.date) == 3, "March"),
-            #             (func.extract("month", FnUserData.date) == 4, "April"),
-            #             (func.extract("month", FnUserData.date) == 5, "May"),
-            #             (func.extract("month", FnUserData.date) == 6, "June"),
-            #             (func.extract("month", FnUserData.date) == 7, "July"),
-            #             (func.extract("month", FnUserData.date) == 8, "August"),
-            #             (func.extract("month", FnUserData.date) == 9, "September"),
-            #             (func.extract("month", FnUserData.date) == 10, "October"),
-            #             (func.extract("month", FnUserData.date) == 11, "November"),
-            #             (func.extract("month", FnUserData.date) == 12, "December"),
-            #             else_="",
-            #         ).label("Month"),
-            #     )
-            #     .filter(
-            #         FnUserData.fn_form_id == formid, FnUserData.created_by == userid
-            #     )
-            #     .all()
-            # )
 
             logger.info(
                 f"User data saved with ID : {formid} and len is {len(user_data)} "
@@ -783,9 +746,9 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
 
             diff_query = receive_query(
                 session.query(
-                    ((changed["change_value"] - func.sum(FnScenarioData.amount)) / func.count()).label("diff"),
-                )
-                .filter(
+                    ( ( ( changed["change_value"] - func.sum(FnScenarioData.amount)) / func.sum(FnScenarioData.amount)) * 100 )
+                    .label("change_value"),
+                ).filter(
                   dynamic_filter_condition
                 ).all())[0]
             
@@ -793,7 +756,7 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
 
             updated_data_list = session.query(FnScenarioData)\
             .filter(dynamic_filter_condition)\
-            .update({"amount": FnScenarioData.amount + diff_query["diff"], "change_value": 0}, synchronize_session="fetch")
+            .update(diff_query, synchronize_session="fetch")
 
             session.commit()
 
