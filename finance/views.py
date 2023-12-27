@@ -456,7 +456,7 @@ class TokenAPIView(APIView):
             
             logger.info(f"{payload=}")
             
-            url = constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/generate-jwt"
+            url = constants.get_config("parameters", "identityUrl") + "/jwt/generate-jwt"
             logger.info(f"{url=}")
             resp = post(
                 url,
@@ -469,7 +469,7 @@ class TokenAPIView(APIView):
             
             logger.info(f"{resp=} {token=}")
             
-            url = constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/sso-lumenore"
+            url = constants.get_config("parameters", "identityUrl") + "/jwt/sso-lumenore"
             logger.info(f"{url=}")
             
             response = post(
@@ -490,7 +490,7 @@ class TokenAPIView(APIView):
 
             meta = {"code": HTTP_200_OK}
         except Exception as e:
-            logger.info(f"Exception in Alter Data -> {e}")
+            logger.info(f"Exception in SSO -> {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
