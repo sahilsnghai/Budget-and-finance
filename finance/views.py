@@ -3,7 +3,7 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
     HTTP_500_INTERNAL_SERVER_ERROR,
-    HTTP_401_UNAUTHORIZED
+    HTTP_401_UNAUTHORIZED,
 )
 from rest_framework.views import APIView
 from .utils import create_response, format_df, create_filter
@@ -448,42 +448,51 @@ class TokenAPIView(APIView):
             return Response(
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
+        try:
+            payload = {
+                "clientSecret": settings.SECRET_CLIENT, 
+                "clientId": settings.SECRET_CLIENTID, 
+                "email": email
+                    }
+            
+            logger.info(f"{payload=}")
+            
+            resp = post(
+                constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/generate-jwt",
+                headers= {
+                'Content-Type': 'application/json',
+                },
+                json={"data": payload},
+            )
 
-        payload = {
-            "clientSecret": settings.SECRET_CLIENT, 
-            "clientId": settings.SECRET_CLIENTID, 
-            "email": email
-                   }
-        
-        logger.info(f"{payload=}")
-        
-        resp = post(
-            constants.get_config("parameters", "identityUrl") + "/api/secure/jwt/generate-jwt",
-            headers= {
-            'Content-Type': 'application/json',
-            },
-            json={"data": payload},
-        )
+            logger.info(f"{resp=}")
 
-        logger.info(f"{resp=}")
-        token = resp.json()["data"]
+            token = resp.json()["data"]
 
-        response = post(
-            constants.get_config("parameters", "identityUrl") + "/api/secure//jwt/sso-lumenore",
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            data={
-                "jwt": token,
-                "return_to": constants.get_config("parameters", "financeAppRedirectUrl"),
-                "clientId": settings.SECRET_CLIENTID,
-            },
-        )
+            response = post(
+                constants.get_config("parameters", "identityUrl") + "/api/secure//jwt/sso-lumenore",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                data={
+                    "jwt": token,
+                    "return_to": constants.get_config("parameters", "financeAppRedirectUrl"),
+                    "clientId": settings.SECRET_CLIENTID,
+                },
+            )
 
-        if response.status_code == 200:
-            data = response.text
-            logger.info(data)
-        else:
-            logger.exception(f"Error: {response.status_code} - {response.text}")
+            if response.status_code == 200:
+                data = response.text
+                logger.info(data)
+            else:
+                logger.exception(f"Error: {response.status_code} - {response.text}")
 
-        meta = {"code": HTTP_200_OK}
+            meta = {"code": HTTP_200_OK}
+        except Exception as e:
+            logger.info(f"Exception in Alter Data -> {e}")
+            meta = {
+                "error_message": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+            data = None
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["code"])
