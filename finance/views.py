@@ -28,17 +28,14 @@ from .database.get_data import (
     Session,
 )
 from time import perf_counter
-from pathlib import Path
 import pandas as pd
 
 from requests import post
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.http import HttpResponseRedirect
 
 constants = Constants()
 logger = set_up_logging()
-
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class CreateHierarchy(APIView):
@@ -483,8 +480,8 @@ class TokenAPIView(APIView):
             )
 
             if response.status_code == 200:
-                data = response.text
-                logger.info(data)
+                redirect_url = response.text.strip('"')
+                logger.info(redirect_url)
             else:
                 logger.exception(f"Error: {response.status_code} - {response.text}")
 
@@ -496,6 +493,5 @@ class TokenAPIView(APIView):
                 "error": True,
                 "code": HTTP_500_INTERNAL_SERVER_ERROR,
             }
-            data = None
-        create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+            redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
+        return HttpResponseRedirect(redirect_to=redirect_url)
