@@ -746,7 +746,8 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
 
             diff_query = receive_query(
                 session.query(
-                    ( ( ( changed["change_value"] - func.sum(FnScenarioData.amount)) / func.sum(FnScenarioData.amount)) * 100 )
+                    (((changed["change_value"] - func.sum(FnScenarioData.amount)) / 
+                       func.sum(FnScenarioData.amount)) * 100 )
                     .label("change_value"),
                 ).filter(
                   dynamic_filter_condition
