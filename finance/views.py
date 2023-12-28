@@ -2,11 +2,10 @@ from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
-    HTTP_500_INTERNAL_SERVER_ERROR,
-    HTTP_401_UNAUTHORIZED,
+    HTTP_500_INTERNAL_SERVER_ERROR
 )
 from rest_framework.views import APIView
-from .utils import create_response, format_df, create_filter
+from .utils import create_response, format_df, create_filter, COLUMNS
 from djangoproject.constants import Constants
 from djangoproject.main_logger import set_up_logging
 from .database.get_data import (
@@ -127,6 +126,8 @@ class CreateHierarchy(APIView):
     @staticmethod
     def save_matrix(df, filename, **kwargs):
         try:
+            if list(df.columns.to_list()) != list(COLUMNS.keys()): 
+                raise Exception("Invalid Column Names.")
             formid = create_form(filename, kwargs.get("userid"), kwargs.get("orgid"))
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
@@ -188,7 +189,7 @@ class CreateScenario(APIView):
                 }
                 meta = {"code": HTTP_200_OK}
         except Exception as e:
-            logger.info(f"Exception in creating hierarchy -> {e}")
+            logger.info(f"Exception in creating Scenario -> {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
@@ -214,7 +215,7 @@ class UpdateChangePrecentage(APIView):
             meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
         except Exception as e:
-            logger.info(f"Exception in Alter Data -> {e}")
+            logger.info(f"Exception in Update Change Precentage -> {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
@@ -276,7 +277,7 @@ class FetchScenario(APIView):
             scenario_names = fetch_scenario(formid=formid, userid=userid)
             data, meta = scenario_names, {"code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
+            logger.exception(f"exception while fetching scenario names:  {e}")
             data = None
             meta = {
                 "error_message": str(e),
@@ -301,7 +302,7 @@ class GetData(APIView):
             )
             meta = {"code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
+            logger.exception(f"exception while Gettting Data:  {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
@@ -339,7 +340,7 @@ class filterColumn(APIView):
             )
             meta = {"code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
+            logger.exception(f"exception while Filtering Column Values:  {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
@@ -371,7 +372,7 @@ class GetScenario(APIView):
             )
             meta = {"code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
+            logger.exception(f"exception while Getting Scenario:  {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
@@ -397,7 +398,7 @@ class UpdateBudget(APIView):
             meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
-            logger.info(f"Exception in Alter Data -> {e}")
+            logger.info(f"Exception in Updating Budget -> {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,
@@ -424,7 +425,7 @@ class UpdateChangeValue(APIView):
             meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
-            logger.info(f"Exception in Alter Data -> {e}")
+            logger.info(f"Exception in Updating Change Value -> {e}")
             meta = {
                 "error_message": str(e),
                 "error": True,

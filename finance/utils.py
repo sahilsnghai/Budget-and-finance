@@ -68,10 +68,10 @@ def create_filter(datalist):
     for row in datalist:
         filters = {}
         if row.get("changePrecentage") is not None:
-            change_value = {"change_value": (row["changePrecentage"] / 100) + 1}
+            change_value = {"changePrecentage": (row["changePrecentage"] / 100) + 1}
         elif row.get("changeValue") is not None:
             change_value = {
-                "change_value": row["changeValue"],
+                "changeValue": row["changeValue"],
                 "date": row["date"],
                 "dateformat": row.get("dateformat", "%Y%m"),
             }

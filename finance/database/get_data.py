@@ -1,5 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, case, func, or_, literal
+from sqlalchemy import and_, case, func, or_, literal, desc
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData
 from djangoproject.main_logger import set_up_logging
 from .db import Session
@@ -28,6 +28,12 @@ def create_form(form_name, lum_user_id, lum_org_id):
     try:
         logger.info(f"creating form")
         with Session() as session:
+            (
+                session.query(FnForm)
+                .filter(FnForm.lum_org_id == lum_org_id, FnForm.created_by == lum_user_id)
+                .update({"is_active": False}, synchronize_session="fetch")
+            )
+            
             form_instance = FnForm(
                 form_name=form_name,
                 lum_user_id=lum_user_id,
@@ -88,7 +94,7 @@ def fetch_from(userid, orgid):
                     FnForm.lum_user_id == userid,
                     FnForm.lum_org_id == orgid,
                     FnForm.is_active == True,
-                )
+                ).order_by(desc(FnForm.fn_form_id)).limit(1)
                 .all()
             )
             logger.info(f"Form_name for user {userid}")
@@ -361,47 +367,6 @@ def create_user_data_scenario(
         created_session and session.close()
     return
 
-
-def get_user_scenario(scenarioid, session=None, created_session=False):
-    scenario_data = {}
-    try:
-        if session is None:
-            session = Session()
-            created_session = True
-
-        logger.info(f"fetching user data")
-        start = perf_counter()
-
-        scenario_data = (
-            session.query(
-                FnScenarioData.date,
-                FnScenarioData.receipt_number,
-                FnScenarioData.business_unit,
-                FnScenarioData.account_type,
-                FnScenarioData.account_subtype,
-                FnScenarioData.project_name,
-                FnScenarioData.amount_type,
-                FnScenarioData.amount,
-                FnScenarioData.change_value,
-            )
-            .filter(FnScenarioData.fn_scenario_id == scenarioid)
-            .all()
-        )
-        scenario_data = [row._asdict() for row in scenario_data]
-        logger.info(f"scenario data {len(scenario_data)}")
-        logger.info(f"time taken by save scenario is {perf_counter() - start}")
-        logger.info(f"User data fetch with ID: {scenarioid} ")
-    except SQLAlchemyError as e:
-        session.rollback()
-        logger.exception(f"Error scnario: {e}")
-    except Exception as e:
-        session.rollback()
-        logger.exception(f"Error in SQL: {e}")
-    finally:
-        created_session and session.close()
-    return scenario_data
-
-
 def get_user_scenario_new(scenarioid, formid, session=None, created_session=False):
     scenario_data = {}
     try:
@@ -451,8 +416,11 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
             )
             .join(
                 FnScenario, FnScenario.fn_scenario_id == FnScenarioData.fn_scenario_id
+            ).join(
+                FnForm, FnScenario.fn_form_id == FnForm.fn_form_id
             )
             .filter(
+                FnForm.is_active == True,
                 FnScenario.fn_form_id == formid,
                 FnScenarioData.fn_scenario_id == scenarioid,
                 FnScenarioData.is_active == True,
@@ -518,31 +486,35 @@ def update_scenario_percentage(
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
 
-            update = receive_query(session.query(
-                ((
-                    -1
-                    + (
-                        (func.sum(FnScenarioData.amount) * update["change_value"])
-                        - func.sum(
-                            case((FnScenarioData.amount_type == 1, FnScenarioData.amount), else_=None)
+            try:
+                update = receive_query(session.query(
+                    ((
+                        -1
+                        + (
+                            (func.sum(FnScenarioData.amount) * update["changePrecentage"])
+                            - func.sum(
+                                case((FnScenarioData.amount_type == 1, FnScenarioData.amount), else_=None)
+                            )
+                        )
+                        / func.sum(
+                            case((FnScenarioData.amount_type == 0, FnScenarioData.amount), else_=None)
                         )
                     )
-                    / func.sum(
-                        case((FnScenarioData.amount_type == 0, FnScenarioData.amount), else_=None)
-                    )
+                    * 100).label("change_value")
+                ).filter_by(**filters).all())[0]
+
+                logger.info(f"Starting Updating {update=}")
+
+                updated_data = (
+                    session.query(FnScenarioData)
+                    .filter(dynamic_filter_condition, FnScenarioData.amount_type == 0)
+                    .update(update, synchronize_session="fetch")
                 )
-                * 100).label("change_value")
-            ).filter_by(**filters).all())[0]
 
-            logger.info(f"Starting Updating {update=}")
-
-            updated_data = (
-                session.query(FnScenarioData)
-                .filter(dynamic_filter_condition, FnScenarioData.amount_type == 0)
-                .update(update, synchronize_session="fetch")
-            )
-
-            session.commit()
+                session.commit()
+            except Exception as e:
+                logger.exception(f"Exception while Updating Change Precentage: {e}")
+                continue
 
             logger.info(f"Number of rows updated: {updated_data}")
 
@@ -744,23 +716,26 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
             logger.info(f"{changed=}")
+            try:
+                changed = receive_query(
+                    session.query(
+                        (((changed["changeValue"] - func.sum(FnScenarioData.amount)) / 
+                        func.sum(FnScenarioData.amount)) * 100 )
+                        .label("change_value"),
+                    ).filter(
+                    dynamic_filter_condition
+                    ).all())[0]
+                
+                logger.info(f"{changed=}")
 
-            diff_query = receive_query(
-                session.query(
-                    (((changed["change_value"] - func.sum(FnScenarioData.amount)) / 
-                       func.sum(FnScenarioData.amount)) * 100 )
-                    .label("change_value"),
-                ).filter(
-                  dynamic_filter_condition
-                ).all())[0]
-            
-            logger.info(f"{diff_query=}")
+                updated_data_list = session.query(FnScenarioData)\
+                .filter(dynamic_filter_condition)\
+                .update(changed, synchronize_session="fetch")
 
-            updated_data_list = session.query(FnScenarioData)\
-            .filter(dynamic_filter_condition)\
-            .update(diff_query, synchronize_session="fetch")
-
-            session.commit()
+                session.commit()
+            except Exception as e:
+                logger.exception(f"Exception while Updating Change Precentage: {e}")
+                continue
 
         logger.info(f"Scenario data {updated_data_list}")
         logger.info(f"Time taken by fetching scenario is {perf_counter() - start}")
