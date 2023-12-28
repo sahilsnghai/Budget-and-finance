@@ -35,11 +35,11 @@ DEBUG = False
 # LOGIN_URL = 'login'
 
 
-ALLOWED_HOSTS = ['.lumenore.com',"*", "http://localhost:3000"]
+ALLOWED_HOSTS = ['.lumenore.com',"*", "http://localhost:3000", "https://test.testlume.in"]
 CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com',"https://test.testlume.in/"]
-CORS_ALLOWED_ORIGINS = ('https://*.lumenore.com',"http://localhost:8080","http://localhost:3000", "https://test.testlume.in/")
-CORS_ORIGIN_WHITELIST = ("http://localhost:3000",)
+CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com',"https://test.testlume.in"]
+CORS_ALLOWED_ORIGINS = ('https://*.lumenore.com',"http://localhost:8080","http://localhost:3000", "https://test.testlume.in")
+CORS_ORIGIN_WHITELIST = ("http://localhost:3000","https://test.testlume.in")
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
