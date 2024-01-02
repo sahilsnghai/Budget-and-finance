@@ -31,7 +31,10 @@ def create_response(data, code=HTTP_200_OK, error=False, **kwags):
         constants.STATUS200.pop("error_message", None)
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
-    logger.info(f"-------------------------------------------------------")
+    logger.info(f" {constants.engine.pool.status()} ")
+    logger.info(
+        f"-----------------------------------------------------------------------"
+    )
 
 
 def format_df(df, *args, **kwargs):

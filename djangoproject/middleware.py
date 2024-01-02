@@ -1,29 +1,28 @@
 from djangoproject.main_logger import set_up_logging
 from djangoproject.constants import Constants
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import JsonResponse
+from rest_framework.status import HTTP_401_UNAUTHORIZED
 from requests import get
-from django.conf import settings
 import jwt
 
 logger = set_up_logging()
 constants = Constants()
 
 
-def task_middleware(get_response):
-    def middleware(req):
-        logger.info(f"{req.path=}")
-        logger.info(f"\n\n{req.headers=}\n\n")
-        if req.path == "/apps/validate-password":
-            logger.info("genrating jwt")
-            return get_response(req)
+def middleware(get_response):
+    def app_middleware(req):
 
-        # if process_req(req=req):
-        response = get_response(req)
-        # else:
-            # response = HttpResponseForbidden(req)
+        logger.info(f"{req.path=}")
+        validity = process_req(req=req)    
+        logger.info(f"{validity=}")
+        
+        if validity:
+            response = get_response(req)
+        else:
+            response = JsonResponse({"Authorization": "Authorization Failed"}, status=HTTP_401_UNAUTHORIZED)
         return response
 
-    return middleware
+    return app_middleware
 
 
 def process_req(req):
@@ -35,13 +34,14 @@ def process_req(req):
     resp
     """
     try:
-        token = get_token(req.headers["Authorization"])
-        constants.HEADERS["Authorization"] = token
+        # token = get_token(req.headers["Authorization"])
+        token = req.headers.get("Authorization")
+        logger.info(f"{token=}")
         if token and not _token_is_valid(token, req):
-            raise HttpResponse("Authentication required", status=401)
+            raise Exception("Unauthentication")
         auth = True
     except Exception as e:
-        print(f"Authentication failed due to {e}")
+        logger.exception(f"Authentication failed due to {e}")
         auth = False
     return auth
 
@@ -64,11 +64,11 @@ def _token_is_valid(token, req):
         )
         constants.time_zone = req.headers.get("TIMEZONE", "US/Eastern")
         req.context = decoded_token["userVo"]
-        print(f"{decoded_token=}")
-        auth = True
+        logger.info(f"{req.context=}")
 
+        auth = True
     except Exception as ex:
-        print(f"Token could not be validated:\t{ex}")
+        logger.exception(f"Token could not be validated: {ex}")
         auth = False
     return auth
 
@@ -86,6 +86,6 @@ def get_token(token, version=None):
         response = f'{token[0]} {response}' or token
     except Exception as e:
         token = jwt.decode(token)
-        print(f"error in getting bigget token {e}")
+        logger.exception(f"error in getting bigget token {e}")
         response = token
     return response

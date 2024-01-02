@@ -15,5 +15,4 @@ urlpatterns = [
 
     path('<str:task>/<int:pk>/edit/', views.update, name='edit'),
     path('<str:task>/<int:pk>/delete/', views.delete, name='delete'),
-    # other patterns
 ]

@@ -32,7 +32,6 @@ from time import perf_counter
 import pandas as pd
 
 from requests import post
-from django.conf import settings
 from django.http import HttpResponseRedirect
 
 constants = Constants()

@@ -27,6 +27,9 @@ class Constants(metaclass=ConstantsMeta):
                           "data": None, 'error': None}
         self.ROOT_DIR = dirname(dirname(abspath(__file__)))
         self.HEADERS = {'content-type': "application/json", 'cache-control': "no-cache", 'version': None}
+        self.engine = None
+        self.Session = None
+
 
     def get_conn_info(self, org=None):
         """

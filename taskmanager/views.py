@@ -11,14 +11,13 @@ from .models import (
     TmPriority,
     TmTaskType,
 )
-from django.http import HttpResponse
 from .forms import UserRegistrationForm, TmTaskForm, TmProjectForm, TmTaskInfoForm
 from django.utils import timezone
 
 from djangoproject.main_logger import set_up_logging
+from django.conf import settings
 
 logger = set_up_logging()
-
 
 @login_required(login_url="login")
 def update(req, task, pk):
@@ -101,6 +100,9 @@ def delete(req, task, pk):
 ### Home
 @login_required(login_url="login")
 def home(req):
+
+    logger.info(f" {settings.BASE_DIR}")
+
     tm_tasks = TmTask.objects.all().order_by("tm_status")
     tm_task_form = TmTaskForm()
     tm_task_info_form = TmTaskInfoForm()
@@ -224,6 +226,8 @@ def logout_view(req):
 
 @login_required(login_url="login")
 def create_project(req, project_instance=None):
+    logger.info(f" {settings.BASE_DIR=}")
+
     if req.method == "POST":
         if not project_instance:
             project_instance = TmProjectForm(req.POST)

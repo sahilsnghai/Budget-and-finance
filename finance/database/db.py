@@ -14,4 +14,6 @@ def create_engine_and_session(database='financeApp'):
 
     Session = sessionmaker(bind=engine)
 
+    constants.engine = engine
+    constants.Session = Session
     return Session
