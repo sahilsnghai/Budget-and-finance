@@ -702,24 +702,26 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
 
             logger.info(f"Value Creating Dynamic Filters value")
 
-            dynamic_filter_condition = and_(
-                *filter_conditions,
-                FnScenarioData.created_by == userid,
-                FnScenarioData.fn_scenario_id == scenarioid,
-                FnScenarioData.is_active == True,
-                and_(
-                    func.date_format(
-                        FnScenarioData.date, changed.get("dateformat", "%Y%m")
-                    ) == changed.pop("date"),
-                    func.date_format(
-                        FnScenarioData.date, changed.pop("dateformat", "%Y%m")
-                    ) != None,
-                ),
-            )
-            logger.info(dynamic_filter_condition)
-            logger.info(f"Creating Filters Dynamic Done")
-            logger.info(f"{changed=}")
             try:
+                dynamic_filter_condition = and_(
+                    *filter_conditions,
+                    FnScenarioData.created_by == userid,
+                    FnScenarioData.fn_scenario_id == scenarioid,
+                    FnScenarioData.is_active == True,
+                    and_(
+                        func.date_format(
+                            FnScenarioData.date, changed.get("dateformat", "%Y%m")
+                        ) == changed.pop("date"),
+                        func.date_format(
+                            FnScenarioData.date, changed.pop("dateformat", "%Y%m")
+                        ) != None,
+                    ),
+                )
+                
+                logger.info(dynamic_filter_condition)
+                logger.info(f"Creating Filters Dynamic Done")
+                logger.info(f"{changed=}")
+
                 changed = receive_query(
                     session.query(
                         (((changed["changeValue"] - func.sum(FnScenarioData.amount)) / 
