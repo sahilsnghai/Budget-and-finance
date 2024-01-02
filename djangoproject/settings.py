@@ -26,8 +26,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "pkttgz6y#n+v@rv8xpzph9k!a)z#o+kf3aczy$lqsm+f@kcf@-"
-SECRET_CLIENT = "fRNfqXi/*-!G_tDsvz"
-SECRET_CLIENTID = "salesforcedemo"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False

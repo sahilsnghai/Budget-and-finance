@@ -2,7 +2,8 @@ from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
-    HTTP_500_INTERNAL_SERVER_ERROR
+    HTTP_500_INTERNAL_SERVER_ERROR,
+    HTTP_401_UNAUTHORIZED
 )
 from rest_framework.views import APIView
 from .utils import create_response, format_df, create_filter, COLUMNS
@@ -24,6 +25,7 @@ from .database.get_data import (
     save_scenario,
     update_change_value,
     update_amount_type,
+    get_secret,
     Session,
 )
 from time import perf_counter
@@ -447,36 +449,38 @@ class TokenAPIView(APIView):
                 {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         try:
+            SECRET_CLIENT, SECRET_CLIENTID =  get_secret(orgid=orgid)
+
+            if SECRET_CLIENT == None or SECRET_CLIENTID == None:
+                return Response(
+                    {"Invalid Organization Id": f"Organization {orgid}, Not Found"}, status=HTTP_401_UNAUTHORIZED
+                )
+
             payload = {
-                "clientSecret": settings.SECRET_CLIENT, 
-                "clientId": settings.SECRET_CLIENTID, 
+                "clientSecret": SECRET_CLIENT, 
+                "clientId": SECRET_CLIENTID, 
                 "email": email }
             
             logger.info(f"{payload=}")
-            
-            url = constants.get_config("parameters", "identityUrl") + "/jwt/generate-jwt"
-            logger.info(f"{url=}")
+
             resp = post(
-                url,
+                constants.get_config("parameters", "identityUrl") + "/jwt/generate-jwt",
                 headers= {
                 'Content-Type': 'application/json',
                 },
                 json={"data": payload},
             )
             token = resp.json()["data"]
-            
-            logger.info(f"{resp=} {token=}")
-            
-            url = constants.get_config("parameters", "identityUrl") + "/jwt/sso-lumenore"
-            logger.info(f"{url=}")
-            
+
+            logger.info(f"{resp=} && {token=}")
+
             response = post(
-                url,
+                constants.get_config("parameters", "identityUrl") + "/jwt/sso-lumenore",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
                     "jwt": token,
                     "return_to": constants.get_config("parameters", "financeAppRedirectUrl") + "/",
-                    "clientId": settings.SECRET_CLIENTID,
+                    "clientId": SECRET_CLIENTID,
                 },
             )
 
@@ -486,13 +490,8 @@ class TokenAPIView(APIView):
             else:
                 logger.exception(f"Error: {response.status_code} - {response.text}")
 
-            meta = {"code": HTTP_200_OK}
         except Exception as e:
-            logger.info(f"Exception in SSO -> {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(f"exception while fetching form names:  {e}")
             redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
+            
         return HttpResponseRedirect(redirect_to=redirect_url)

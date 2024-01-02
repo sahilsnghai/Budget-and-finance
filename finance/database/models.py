@@ -79,3 +79,10 @@ class FnScenarioData(Base):
     is_active = Column(Boolean, nullable=False, default=True)
 
     scenario = relationship("FnScenario", backref="scenario_data")
+
+class JwtSettings(Base):
+    __tablename__ = 'jwt_settings'
+    id = Column(Integer, primary_key=True)
+    secret = Column(String)
+    client_id = Column(String)
+    organizationId = Column(Integer)

@@ -1,10 +1,11 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_, case, func, or_, literal, desc
-from .models import FnForm, FnUserData, FnScenario, FnScenarioData
 from djangoproject.main_logger import set_up_logging
-from .db import Session
 from time import perf_counter
+from .db import create_engine_and_session
+from .models import FnForm, FnUserData, FnScenario, FnScenarioData, JwtSettings
 
+Session = create_engine_and_session()
 logger = set_up_logging()
 
 
@@ -308,12 +309,14 @@ def create_scenario(
         if session is None:
             session = Session()
             created_session = True
+
         scenario_name_list = fetch_scenario(formid=formid, userid=userid)
         scenario_name_list = (
             {item["scenario_name"] for item in scenario_name_list}
             if len(scenario_name_list) > 0
             else []
         )
+
         logger.info(scenario_name_list)
         if not scenario_name in scenario_name_list:
             scenario_instance = FnScenario(
@@ -786,3 +789,23 @@ def update_amount_type(
     finally:
         created_session and session.close()
     return updated_data
+
+def get_secret(orgid=None,Session=create_engine_and_session(database="ccplatform")):
+    SECRET_CLIENT, SECRET_CLIENTID = None, None
+    try:
+        session = Session()
+        Client = receive_query(session.query(JwtSettings.secret.label("SECRET_CLIENT"), 
+                                             JwtSettings.client_id.label("SECRET_CLIENTID"))
+                               .filter(JwtSettings.organizationId == orgid).all())[0]
+        logger.info(f"{Client=}")
+        SECRET_CLIENT, SECRET_CLIENTID = Client["SECRET_CLIENT"], Client["SECRET_CLIENTID"],
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.exception(f"Error could not perform SQL query: {e}")
+    except Exception as e:
+        session.rollback()
+        logger.exception(f"Error in SQL: {e}")
+    finally:
+        session.close()
+    return SECRET_CLIENT, SECRET_CLIENTID
