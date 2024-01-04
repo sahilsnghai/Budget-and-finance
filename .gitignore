@@ -11,5 +11,3 @@ db.sqlite3
 
 *.zip
 launch.*
-
-staticfiles/
