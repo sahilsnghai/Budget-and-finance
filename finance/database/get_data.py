@@ -475,36 +475,50 @@ def update_scenario_percentage(
                 FnScenarioData.created_by == userid,
                 FnScenarioData.fn_scenario_id == scenarioid,
                 FnScenarioData.is_active == True,
-                or_(
-                    func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y")
-                    )
+                and_(
+                    func.date_format(FnScenarioData.date, data.get("dateformat", "%Y"))
                     == data.get("date"),
-                    func.date_format(
-                        FnScenarioData.date, data.get("dateformat", "%Y")
-                    )
+                    func.date_format(FnScenarioData.date, data.get("dateformat", "%Y"))
                     != None,
                 ),
             )
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
+            logger.info(f"Before Calculation {update['changePrecentage']=}")
 
             try:
-                update = receive_query(session.query(
-                    ((
-                        -1
-                        + (
-                            (func.sum(FnScenarioData.amount) * update["changePrecentage"])
-                            - func.sum(
-                                case((FnScenarioData.amount_type == 1, FnScenarioData.amount), else_=None)
-                            )
+                update = (
+                    receive_query(
+                        session.query(
+                            case(
+                                (
+                                    update["changePrecentage"] != 0.0,
+                                    ( -1 + ((
+                                                func.sum(FnScenarioData.amount)
+                                                * update["changePrecentage"]
+                                            )
+                                            - func.sum(
+                                                case(
+                                                    (
+                                                        FnScenarioData.amount_type == 1,
+                                                        FnScenarioData.amount,
+                                                    ),
+                                                    else_=None,
+                                                )
+                                            )) / func.sum(
+                                            case(
+                                                (
+                                                    FnScenarioData.amount_type == 0,
+                                                    FnScenarioData.amount,
+                                                ),
+                                                else_=None,
+                                            )) )* 100 ),
+                                else_=0.0,
+                            ).label("change_value")
                         )
-                        / func.sum(
-                            case((FnScenarioData.amount_type == 0, FnScenarioData.amount), else_=None)
-                        )
-                    )
-                    * 100).label("change_value")
-                ).filter_by(**filters).all())[0]
+                    .filter_by(**filters)
+                    .all())[0]
+                )
 
                 logger.info(f"Starting Updating {update=}")
 
@@ -678,7 +692,9 @@ def save_scenario(userid, scenarioid, formid, session=None, created_session=Fals
     return stmt
 
 
-def update_change_value(data, filters_list, userid=None, scenarioid=None, session=None, created_session=None):
+def update_change_value(
+    data, filters_list, userid=None, scenarioid=None, session=None, created_session=None
+):
     updated_data_list = []
 
     try:
@@ -733,9 +749,11 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None, sessio
                 
                 logger.info(f"{changed=}")
 
-                updated_data_list = session.query(FnScenarioData)\
-                .filter(dynamic_filter_condition)\
-                .update(changed, synchronize_session="fetch")
+                updated_data_list = (
+                    session.query(FnScenarioData)
+                    .filter(dynamic_filter_condition)
+                    .update(changed, synchronize_session="fetch")
+                )
 
                 session.commit()
             except Exception as e:
@@ -792,15 +810,24 @@ def update_amount_type(
         created_session and session.close()
     return updated_data
 
-def get_secret(orgid=None,Session=create_engine_and_session(database="ccplatform")):
+
+def get_secret(orgid=None, Session=create_engine_and_session(database="ccplatform")):
     SECRET_CLIENT, SECRET_CLIENTID = None, None
     try:
         session = Session()
-        Client = receive_query(session.query(JwtSettings.secret.label("SECRET_CLIENT"), 
-                                             JwtSettings.client_id.label("SECRET_CLIENTID"))
-                               .filter(JwtSettings.organizationId == orgid).all())[0]
+        Client = receive_query(
+            session.query(
+                JwtSettings.secret.label("SECRET_CLIENT"),
+                JwtSettings.client_id.label("SECRET_CLIENTID"),
+            )
+            .filter(JwtSettings.organizationId == orgid)
+            .all()
+        )[0]
         logger.info(f"{Client=}")
-        SECRET_CLIENT, SECRET_CLIENTID = Client["SECRET_CLIENT"], Client["SECRET_CLIENTID"],
+        SECRET_CLIENT, SECRET_CLIENTID = (
+            Client["SECRET_CLIENT"],
+            Client["SECRET_CLIENTID"],
+        )
 
     except SQLAlchemyError as e:
         session.rollback()

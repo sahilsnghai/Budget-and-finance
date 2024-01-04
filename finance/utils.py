@@ -67,7 +67,9 @@ def create_filter(datalist):
     for row in datalist:
         filters = {}
         if row.get("changePrecentage") is not None:
-            change_value = {"changePrecentage": (row["changePrecentage"] / 100) + 1}
+            logger.info(f"{row['changePrecentage']=}")
+            change_value = {"changePrecentage": 0.0} if row.get("changePrecentage") == 0 else {"changePrecentage": (row["changePrecentage"] / 100) + 1}
+            logger.info(f"{change_value=}")
         elif row.get("changeValue") is not None:
             change_value = {
                 "changeValue": row["changeValue"],
