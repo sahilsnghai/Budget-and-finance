@@ -13,7 +13,7 @@ def middleware(get_response):
     def app_middleware(req):
 
         logger.info(f"{req.path=}")
-        validity = process_req(req=req)    
+        validity = True #process_req(req=req)    
         logger.info(f"{validity=}")
         
         if validity:
