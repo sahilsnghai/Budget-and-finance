@@ -1,7 +1,9 @@
 from djangoproject.main_logger import set_up_logging
 from djangoproject.constants import Constants
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from rest_framework.status import HTTP_401_UNAUTHORIZED
+
+from rest_framework.views import APIView
 from requests import get
 import jwt
 
@@ -12,8 +14,12 @@ constants = Constants()
 EXCLUDED_PATHS = [
     '/finance/sso',
     '/finance/login/',
+    '/health/'
 ]
 
+class GetHealth(APIView):
+    def get (self, req):
+        return HttpResponse(status=200)
 
 def middleware(get_response):
     def app_middleware(req):

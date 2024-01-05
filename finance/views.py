@@ -150,7 +150,7 @@ class CreateScenario(APIView):
             data = req.data["data"]
             scenario_name = data["scenario_name"]
             userid = data["userid"]
-            scenario_decription = data["scenario_decription"]
+            scenario_decription = data.get("scenario_decription")
             formid = data["formid"]
         except Exception as e:
             logger.info(f"KEY NOT FOUND {e}")
@@ -230,12 +230,16 @@ class UpdateChangePrecentage(APIView):
 
 class SavesScenario(APIView):
     def post(self, req, format=None):
-        data = req.data["data"]
-        scenarioid = data["scenarioid"]
-        userid = data["userid"]
-        formid = data["formid"]
         try:
-            data = save_scenario(formid=formid, scenarioid=scenarioid, userid=userid)
+            try:
+                data = req.data["data"]
+
+            except Exception as e:
+                logger.info(f"KEY NOT FOUND {e}")
+                return Response(
+                    {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+                )
+            data = save_scenario(data=data)
             meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in saving Scenario -> {e}")

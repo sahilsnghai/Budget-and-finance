@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, TIMESTAMP, ForeignKey, Float, Boolean, func
+from sqlalchemy import Column, Integer, String, TIMESTAMP, ForeignKey, Float, Boolean, func, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -52,6 +52,7 @@ class FnScenario(Base):
     modified_on = Column(TIMESTAMP, server_default=func.now(), server_onupdate=func.now())
     created_by = Column(Integer, nullable=False)
     modified_by = Column(Integer, nullable=False)
+    is_draft = Column(Boolean, nullable=False, server_default=text("0"))
     is_active = Column(Boolean, nullable=False, default=True)
 
     form = relationship("FnForm", backref="scenarios")

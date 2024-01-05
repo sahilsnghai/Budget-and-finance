@@ -126,6 +126,7 @@ def fetch_scenario(formid, userid):
                 .filter(
                     FnScenario.fn_form_id == formid,
                     FnScenario.created_by == userid,
+                    FnScenario.is_draft == False,
                     FnScenarioData.is_active == True
                 )
                 .all()
@@ -678,14 +679,44 @@ def scenario_data_status_update(
     return stmt
 
 
-def save_scenario(userid, scenarioid, formid, session=None, created_session=False):
+def save_scenario(data, session=None, created_session=False):
     stmt = {}
     try:
-        logger.info("save_scenario")
+        start = perf_counter()
+        logger.info(f"{data=}")
+        userid = data["userid"]
+        formid = data["formid"]
+        scenarioid = data["scenarioid"]
+
+        scenario_name_new = data.get("scenario_name")
+        scenario_decription = data.get("scenario_decription")
+
+        logger.info("Saving Scenario")
+
         if session is None:
             session = Session()
             created_session = True
-        stmt = {"Scenario Saved": "Scenario Saved", "scenarioid": scenarioid}
+
+
+        update_values = {"is_draft": False}
+
+        if scenario_name_new:
+            update_values["scenario_name"] = scenario_name_new
+
+        if scenario_decription:
+            update_values["scenario_description"] = scenario_decription
+
+        logger.info(f"{update_values=}")
+        stmt = (session.query(FnScenario).filter(
+                FnScenario.created_by == userid,
+                FnScenario.fn_scenario_id == scenarioid,
+                FnScenario.fn_form_id == formid,
+                FnScenario.is_active == True
+            ).update(update_values, synchronize_session="fetch"))
+        session.commit()
+        logger.info(f"{str(stmt)}")
+        logger.info("Scenario Saved")
+        logger.info(f"saving took time {perf_counter() - start}")
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error saving scenario : {e}")
@@ -745,7 +776,7 @@ def update_change_value(
 
                 changed = receive_query(
                     session.query(
-                        (((changed["changeValue"] - func.sum(FnScenarioData.amount)) / 
+                        (((changed["changeValue"] - func.sum(FnScenarioData.amount)) /
                         func.sum(FnScenarioData.amount)) * 100 )
                         .label("change_value"),
                     ).filter(
