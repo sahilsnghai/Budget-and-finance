@@ -9,14 +9,19 @@ logger = set_up_logging()
 constants = Constants()
 
 
+EXCLUDED_PATHS = [
+    '/finance/sso',
+    '/finance/login/',
+]
+
+
 def middleware(get_response):
     def app_middleware(req):
-
-        logger.info(f"{req.path=}")
-        validity = process_req(req=req)    
+        logger.info(f"{'-'*100} \n{req.build_absolute_uri()} \n")
+        validity = True if req.path in EXCLUDED_PATHS else process_req(req=req)
         logger.info(f"{validity=}")
-        
-        if validity:
+
+        if validity :
             response = get_response(req)
         else:
             response = JsonResponse({"Authorization": "Authorization Failed"}, status=HTTP_401_UNAUTHORIZED)
@@ -54,6 +59,7 @@ def _token_is_valid(token, req):
     req
 
     """
+    auth = False
     try:
         token = token.split()
         decoded_token = jwt.decode(
@@ -65,8 +71,8 @@ def _token_is_valid(token, req):
         constants.time_zone = req.headers.get("TIMEZONE", "US/Eastern")
         req.context = decoded_token["userVo"]
         logger.info(f"{req.context=}")
-
-        auth = True
+        if req.context:
+            auth = True
     except Exception as ex:
         logger.exception(f"Token could not be validated: {ex}")
         auth = False

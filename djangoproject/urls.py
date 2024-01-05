@@ -22,6 +22,6 @@ contants = Constants()
 
 urlpatterns = [
     path("lumenore/path/administrator", admin.site.urls),
-    path("apps/task/", include("taskmanager.urls")),
-    path("apps/finance/", include("finance.urls")),
+    path("task/", include("taskmanager.urls")),
+    path("finance/", include("finance.urls")),
 ]

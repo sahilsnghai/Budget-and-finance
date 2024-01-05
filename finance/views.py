@@ -7,8 +7,7 @@ from rest_framework.status import (
 )
 from rest_framework.views import APIView
 from .utils import create_response, format_df, create_filter, COLUMNS
-from djangoproject.constants import Constants
-from djangoproject.main_logger import set_up_logging
+from djangoproject import Constants, set_up_logging
 from .database.get_data import (
     create_form,
     create_user_data,
@@ -31,8 +30,10 @@ from .database.get_data import (
 from time import perf_counter
 import pandas as pd
 
-from requests import post
+from requests import post, get
 from django.http import HttpResponseRedirect
+from django.utils.decorators import decorator_from_middleware
+
 
 constants = Constants()
 logger = set_up_logging()
@@ -436,18 +437,18 @@ class UpdateChangeValue(APIView):
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["code"])
 
-
 class TokenAPIView(APIView):
     def get(self, req):
+
         try:
-            orgid = req.GET["organizationId"]
-            email = req.GET["email"]
-        except KeyError as e:
-            logger.info(f"{req.GET=}")
-            return Response(
-                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
-            )
-        try:
+            try:
+                orgid = req.GET["organizationId"]
+                email = req.GET["email"]
+            except KeyError as e:
+                logger.info(f"{req.GET=}")
+                return Response(
+                    {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+                )
             SECRET_CLIENT, SECRET_CLIENTID =  get_secret(orgid=orgid)
 
             if SECRET_CLIENT == None or SECRET_CLIENTID == None:
@@ -456,10 +457,10 @@ class TokenAPIView(APIView):
                 )
 
             payload = {
-                "clientSecret": SECRET_CLIENT, 
-                "clientId": SECRET_CLIENTID, 
+                "clientSecret": SECRET_CLIENT,
+                "clientId": SECRET_CLIENTID,
                 "email": email }
-            
+
             logger.info(f"{payload=}")
 
             resp = post(
@@ -478,7 +479,7 @@ class TokenAPIView(APIView):
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
                     "jwt": token,
-                    "return_to": constants.get_config("parameters", "financeAppRedirectUrl") + "/",
+                    "return_to": constants.get_config("parameters", "financeAppRedirectUrl"),
                     "clientId": SECRET_CLIENTID,
                 },
             )
@@ -492,5 +493,24 @@ class TokenAPIView(APIView):
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
-            
+
+        return HttpResponseRedirect(redirect_to=redirect_url)
+
+class Login(APIView):
+    def get(self, req):
+        try:
+            url = constants.get_config("parameters", "freemium") + "/generate-auth-token"
+            logger.info(f"{url}")
+            resp = get(url=url,
+                       params={
+                        "ClientId": constants.get_config("parameters", "SECRET_CLIENTID"),
+                        "url": constants.get_config("parameters", "financeAppRedirectUrl")
+                        }
+                    )
+            logger.info(f"{resp.status_code}")
+            redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
+        except Exception as e:
+            logger.exception(f"exception while fetching form names:  {e}")
+            redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
+
         return HttpResponseRedirect(redirect_to=redirect_url)

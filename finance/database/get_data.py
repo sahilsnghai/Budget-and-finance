@@ -34,7 +34,7 @@ def create_form(form_name, lum_user_id, lum_org_id):
                 .filter(FnForm.lum_org_id == lum_org_id, FnForm.created_by == lum_user_id)
                 .update({"is_active": False}, synchronize_session="fetch")
             )
-            
+
             form_instance = FnForm(
                 form_name=form_name,
                 lum_user_id=lum_user_id,
@@ -475,13 +475,18 @@ def update_scenario_percentage(
                 FnScenarioData.created_by == userid,
                 FnScenarioData.fn_scenario_id == scenarioid,
                 FnScenarioData.is_active == True,
-                and_(
-                    func.date_format(FnScenarioData.date, data.get("dateformat", "%Y"))
-                    == data.get("date"),
-                    func.date_format(FnScenarioData.date, data.get("dateformat", "%Y"))
-                    != None,
-                ),
             )
+
+            if data.get("date"):
+                dynamic_filter_condition = and_(dynamic_filter_condition,
+                case( (
+                    (
+                    data.get("date") is not None,
+                    func.date_format(FnScenarioData.date,
+                    data.get("dateformat", "%Y")) == data.get("date"),
+                    )),
+                else_= None ))
+
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
             logger.info(f"Before Calculation {update['changePrecentage']=}")
@@ -516,7 +521,7 @@ def update_scenario_percentage(
                                 else_=0.0,
                             ).label("change_value")
                         )
-                    .filter_by(**filters)
+                    .filter(dynamic_filter_condition)
                     .all())[0]
                 )
 
@@ -733,7 +738,7 @@ def update_change_value(
                         ) != None,
                     ),
                 )
-                
+
                 logger.info(dynamic_filter_condition)
                 logger.info(f"Creating Filters Dynamic Done")
                 logger.info(f"{changed=}")
@@ -746,7 +751,7 @@ def update_change_value(
                     ).filter(
                     dynamic_filter_condition
                     ).all())[0]
-                
+
                 logger.info(f"{changed=}")
 
                 updated_data_list = (

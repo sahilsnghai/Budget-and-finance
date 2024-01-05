@@ -11,7 +11,8 @@ from .views import (
     UpdateChangePrecentage,
     UpdateChangeValue,
     UpdateBudget,
-    TokenAPIView
+    TokenAPIView,
+    Login
 )
 
 
@@ -28,5 +29,6 @@ urlpatterns = [
     path("update-value", UpdateChangeValue.as_view(), name="update-value"),
     path("update-actual", UpdateBudget.as_view(), name="update-actual"),
     path('sso', TokenAPIView.as_view(), name='token_obtain_pair'),
+    path('login', Login.as_view(), name='login'),
 
-] 
+]
