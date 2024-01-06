@@ -480,66 +480,46 @@ def update_scenario_percentage(
 
             if data.get("date"):
                 dynamic_filter_condition = and_(dynamic_filter_condition,
-                case( (
-                    (
-                    data.get("date") is not None,
                     func.date_format(FnScenarioData.date,
-                    data.get("dateformat", "%Y")) == data.get("date"),
-                    )),
-                else_= None ))
+                    data.get("dateformat", "%Y")) == data["date"]
+                    )
 
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
             logger.info(f"Before Calculation {update['changePrecentage']=}")
 
             try:
-                update = (
-                    receive_query(
-                        session.query(
-                            case(
-                                (
-                                    update["changePrecentage"] != 0.0,
-                                    ( -1 + ((
-                                                func.sum(FnScenarioData.amount)
-                                                * update["changePrecentage"]
-                                            )
-                                            - func.sum(
-                                                case(
-                                                    (
-                                                        FnScenarioData.amount_type == 1,
-                                                        FnScenarioData.amount,
-                                                    ),
-                                                    else_=None,
-                                                )
-                                            )) / func.sum(
-                                            case(
-                                                (
-                                                    FnScenarioData.amount_type == 0,
-                                                    FnScenarioData.amount,
-                                                ),
-                                                else_=None,
-                                            )) )* 100 ),
-                                else_=0.0,
-                            ).label("change_value")
-                        )
-                    .filter(dynamic_filter_condition)
-                    .all())[0]
-                )
+                update = receive_query(
+                            session.query(
+                                case(
+                                    (
+                                        (update['changePrecentage'] != 0.0,
+                                        (-1 + (func.sum(FnScenarioData.amount) * update['changePrecentage']
+                                                - func.sum(case(((FnScenarioData.amount_type == 1, FnScenarioData.amount)), else_=0)))
+                                        / func.sum(case(((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0))) * 100)
+                                    ),
+                                    else_= 0.0
+                                ).label('change_value')
+                            )
+                            .filter(dynamic_filter_condition)
+                            .all()
+                        )[0]
 
-                logger.info(f"Starting Updating {update=}")
-
-                updated_data = (
-                    session.query(FnScenarioData)
-                    .filter(dynamic_filter_condition, FnScenarioData.amount_type == 0)
-                    .update(update, synchronize_session="fetch")
-                )
+                logger.info(f"New Update Value {update=}")
+                if update["change_value"] is not None :
+                    logger.info("start updating")
+                    updated_data = (
+                        session.query(FnScenarioData)
+                        .filter(dynamic_filter_condition, FnScenarioData.amount_type == 0)
+                        .update(update, synchronize_session="fetch")
+                    )
+                    logger.info(f"Number of rows updated: {updated_data}")
 
                 session.commit()
             except Exception as e:
                 logger.exception(f"Exception while Updating Change Precentage: {e}")
                 continue
 
-            logger.info(f"Number of rows updated: {updated_data}")
 
             logger.info(f"Fetchning data")
             updated_data_query = receive_query(
@@ -779,9 +759,12 @@ def update_change_value(
                         (((changed["changeValue"] - func.sum(FnScenarioData.amount)) /
                         func.sum(FnScenarioData.amount)) * 100 )
                         .label("change_value"),
-                    ).filter(
-                    dynamic_filter_condition
-                    ).all())[0]
+                    )
+                    .filter(
+                        dynamic_filter_condition
+                    )
+                    .all()
+                    )[0]
 
                 logger.info(f"{changed=}")
 
