@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from .constants import Constants
-import os, socket
+import os
 constant = Constants()
 
 financeApp = constant.get_conn_info('financeApp')
@@ -32,9 +32,7 @@ DEBUG = False
 
 # LOGIN_URL = 'login'
 
-print(f"{os.environ.get('CONTAINER_IP')=} {socket.gethostbyname(socket.gethostname())}")
-ALLOWED_HOSTS = ['.lumenore.com', "0.0.0.0", os.environ.get('CONTAINER_IP'), socket.gethostbyname(socket.gethostname())]
-print(f"{ALLOWED_HOSTS}")
+ALLOWED_HOSTS = ['.lumenore.com', "*"]
 
 CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com',]
 CORS_ALLOWED_ORIGINS = ('https://*.lumenore.com',"http://localhost:8080","http://localhost:3000")
