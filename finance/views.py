@@ -32,7 +32,6 @@ import pandas as pd
 
 from requests import post, get
 from django.http import HttpResponseRedirect
-from django.utils.decorators import decorator_from_middleware
 
 
 constants = Constants()

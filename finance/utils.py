@@ -32,7 +32,7 @@ def create_response(data, code=HTTP_200_OK, error=False, **kwags):
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
     logger.info(f" {constants.engine.pool.status()} ")
-    logger.info(f"-"*100)
+    logger.info(f"-" * 100)
 
 
 def format_df(df, *args, **kwargs):
@@ -66,7 +66,11 @@ def create_filter(datalist):
         filters = {}
         if row.get("changePrecentage") is not None:
             logger.info(f"{row['changePrecentage']=}")
-            change_value = {"changePrecentage": 0.0} if row.get("changePrecentage") == 0 else {"changePrecentage": (row["changePrecentage"] / 100) + 1}
+            change_value = {
+                "changePrecentage": row.get("changePrecentage")
+                if row.get("changePrecentage") in [0, -100]
+                else (row["changePrecentage"] / 100) + 1
+            }
             logger.info(f"{change_value=}")
         elif row.get("changeValue") is not None:
             change_value = {

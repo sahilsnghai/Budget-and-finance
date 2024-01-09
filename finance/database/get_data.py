@@ -1,5 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, case, func, or_, literal, desc
+from sqlalchemy import and_, case, func, literal, desc
 from djangoproject.main_logger import set_up_logging
 from time import perf_counter
 from .db import create_engine_and_session
@@ -479,31 +479,42 @@ def update_scenario_percentage(
             )
 
             if data.get("date"):
-                dynamic_filter_condition = and_(dynamic_filter_condition,
-                    func.date_format(FnScenarioData.date,
-                    data.get("dateformat", "%Y")) == data["date"]
-                    )
+                dynamic_filter_condition = and_(
+                    dynamic_filter_condition,
+                    func.date_format(FnScenarioData.date, data.get("dateformat", "%Y")) == data["date"],
+                )
 
             logger.info(dynamic_filter_condition)
             logger.info(f"Creating Filters Dynamic Done")
             logger.info(f"Before Calculation {update['changePrecentage']=}")
 
             try:
-                update = receive_query(
-                            session.query(
-                                case(
-                                    (
-                                        (update['changePrecentage'] != 0.0,
-                                        (-1 + (func.sum(FnScenarioData.amount) * update['changePrecentage']
-                                                - func.sum(case(((FnScenarioData.amount_type == 1, FnScenarioData.amount)), else_=0)))
-                                        / func.sum(case(((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0))) * 100)
-                                    ),
-                                    else_= 0.0
-                                ).label('change_value')
+                update = (
+                    session.query(
+                        case(
+                            (update['changePrecentage'] == 0.0, 0.0),
+                            (update['changePrecentage'] == -100, -100),
+                            else_=(((-1 +
+                                    ((func.sum(
+                                        case(((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
+                                            else_=0.0)
+                                    ) +
+                                    func.sum(
+                                        case(((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
+                                    )) * update['changePrecentage'] -
+                                    func.sum(
+                                        case(((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
+                                            else_=0.0)
+                                    )) /
+                                    func.sum(
+                                        case(((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
+                                    )))
+
+                                    * 100)).label("change_value")
+                            ).filter(dynamic_filter_condition)
                             )
-                            .filter(dynamic_filter_condition)
-                            .all()
-                        )[0]
+                print(update.statement.compile(dialect=session.bind.dialect, compile_kwargs={"literal_binds": True}))
+                update = receive_query(update.all())[0]
 
                 logger.info(f"New Update Value {update=}")
                 if update["change_value"] is not None :
@@ -668,31 +679,29 @@ def save_scenario(data, session=None, created_session=False):
         formid = data["formid"]
         scenarioid = data["scenarioid"]
 
-        scenario_name_new = data.get("scenario_name")
-        scenario_decription = data.get("scenario_decription")
-
         logger.info("Saving Scenario")
 
         if session is None:
             session = Session()
             created_session = True
 
-
         update_values = {"is_draft": False}
 
-        if scenario_name_new:
-            update_values["scenario_name"] = scenario_name_new
+        if data.get("scenario_name") is not None:
+            update_values["scenario_name"] = data["scenario_name"]
 
-        if scenario_decription:
-            update_values["scenario_description"] = scenario_decription
+        if data.get("scenario_decription") is not None:
+            update_values["scenario_description"] = data["scenario_decription"]
 
         logger.info(f"{update_values=}")
-        stmt = (session.query(FnScenario).filter(
+        stmt = (
+            session.query(FnScenario).filter(
                 FnScenario.created_by == userid,
                 FnScenario.fn_scenario_id == scenarioid,
                 FnScenario.fn_form_id == formid,
                 FnScenario.is_active == True
-            ).update(update_values, synchronize_session="fetch"))
+            ).update(update_values, synchronize_session="fetch")
+            )
         session.commit()
         logger.info(f"{str(stmt)}")
         logger.info("Scenario Saved")
@@ -743,10 +752,12 @@ def update_change_value(
                     and_(
                         func.date_format(
                             FnScenarioData.date, changed.get("dateformat", "%Y%m")
-                        ) == changed.pop("date"),
+                        )
+                        == changed.pop("date"),
                         func.date_format(
                             FnScenarioData.date, changed.pop("dateformat", "%Y%m")
-                        ) != None,
+                        )
+                        != None,
                     ),
                 )
 
@@ -760,11 +771,9 @@ def update_change_value(
                         func.sum(FnScenarioData.amount)) * 100 )
                         .label("change_value"),
                     )
-                    .filter(
-                        dynamic_filter_condition
-                    )
+                    .filter(dynamic_filter_condition)
                     .all()
-                    )[0]
+                )[0]
 
                 logger.info(f"{changed=}")
 
