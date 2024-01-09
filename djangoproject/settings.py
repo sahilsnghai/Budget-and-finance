@@ -33,11 +33,10 @@ DEBUG = False
 # LOGIN_URL = 'login'
 
 
-ALLOWED_HOSTS = ['.lumenore.com',"*", "http://localhost:3000", "https://test.testlume.in"]
-CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com',"https://test.testlume.in"]
-CORS_ALLOWED_ORIGINS = ('https://*.lumenore.com',"http://localhost:8080","http://localhost:3000", "https://test.testlume.in")
-CORS_ORIGIN_WHITELIST = ("http://localhost:3000","https://test.testlume.in")
+ALLOWED_HOSTS = ['.lumenore.com', "http://localhost:3000"]
+CSRF_TRUSTED_ORIGINS = ['https://*.lumenore.com',]
+CORS_ALLOWED_ORIGINS = ('https://*.lumenore.com',"http://localhost:8080","http://localhost:3000")
+CORS_ORIGIN_WHITELIST = ("http://localhost:3000",)
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -47,8 +46,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    "taskmanager.apps.TaskmanagerConfig",
-    "livesync",
+    # "taskmanager.apps.TaskmanagerConfig",
+    # "livesync",
 
     'finance.apps.FinanceConfig',
     'rest_framework',
@@ -133,7 +132,7 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
-AUTH_USER_MODEL = "taskmanager.TmUser"
+# AUTH_USER_MODEL = "taskmanager.TmUser"
 
 AUTH_PASSWORD_VALIDATORS = [
     {

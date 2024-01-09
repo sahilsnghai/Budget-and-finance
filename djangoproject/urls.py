@@ -23,7 +23,7 @@ contants = Constants()
 
 urlpatterns = [
     path("lumenore/path/administrator", admin.site.urls),
-    path("task/", include("taskmanager.urls")),
+    # path("task/", include("taskmanager.urls")),
     path("finance/", include("finance.urls")),
     path("health/", GetHealth.as_view(), name="health"),
 
