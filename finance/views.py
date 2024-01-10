@@ -127,7 +127,7 @@ class CreateHierarchy(APIView):
     @staticmethod
     def save_matrix(df, filename, **kwargs):
         try:
-            if list(df.columns.to_list()) != list(COLUMNS.keys()): 
+            if list(df.columns.to_list()) != list(COLUMNS.keys()):
                 raise Exception("Invalid Column Names.")
             formid = create_form(filename, kwargs.get("userid"), kwargs.get("orgid"))
             if formid is not None:
@@ -455,9 +455,7 @@ class TokenAPIView(APIView):
             SECRET_CLIENT, SECRET_CLIENTID =  get_secret(orgid=orgid)
 
             if SECRET_CLIENT == None or SECRET_CLIENTID == None:
-                return Response(
-                    {"Invalid Organization Id": f"Organization {orgid}, Not Found"}, status=HTTP_401_UNAUTHORIZED
-                )
+                raise Exception({"Invalid Organization Id": f"Organization {orgid}, Not Found"})
 
             payload = {
                 "clientSecret": SECRET_CLIENT,
@@ -499,21 +497,3 @@ class TokenAPIView(APIView):
 
         return HttpResponseRedirect(redirect_to=redirect_url)
 
-class Login(APIView):
-    def get(self, req):
-        try:
-            url = constants.get_config("parameters", "freemium") + "/generate-auth-token"
-            logger.info(f"{url}")
-            resp = get(url=url,
-                       params={
-                        "ClientId": constants.get_config("parameters", "SECRET_CLIENTID"),
-                        "url": constants.get_config("parameters", "financeAppRedirectUrl")
-                        }
-                    )
-            logger.info(f"{resp.status_code}")
-            redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
-        except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
-            redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
-
-        return HttpResponseRedirect(redirect_to=redirect_url)

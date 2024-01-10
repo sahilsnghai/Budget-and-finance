@@ -49,7 +49,7 @@ def create_form(form_name, lum_user_id, lum_org_id):
     except SQLAlchemyError as e:
         logger.exception(f"Error saving form: {e}")
     except Exception as e:
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         session.close()
     return formid
@@ -75,7 +75,7 @@ def create_user_data(df, formid, userid):
         logger.exception(f"Error saving user data.: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         session.close()
     return user_data
@@ -104,7 +104,7 @@ def fetch_from(userid, orgid):
         logger.exception(f"Error fetching form: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         session.close()
     return form_names
@@ -138,7 +138,7 @@ def fetch_scenario(formid, userid):
         logger.exception(f"Error fetching scenario form: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         session.close()
     return scenario_names
@@ -206,7 +206,7 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
         logger.exception(f"Error fetching scenario form: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return user_data
@@ -288,7 +288,7 @@ def filter_column(scenarioid, formid, userid, **kwargs):
         logger.exception(f"Error filtering columns: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         session.close()
     return user_data
@@ -340,7 +340,7 @@ def create_scenario(
         logger.exception(f"Error saveing and creating scenario: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
         raise e
     finally:
         created_session and session.close()
@@ -366,7 +366,7 @@ def create_user_data_scenario(
         logger.exception(f"Error scenario meta data: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return
@@ -440,7 +440,7 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
         logger.exception(f"Error getting user scenario data: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return scenario_data
@@ -583,7 +583,7 @@ def update_scenario_percentage(
         logger.exception(f"Error could not perform SQL query: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return updated_data_list
@@ -619,7 +619,7 @@ def scenario_status_update(
         logger.exception(f"Error updating status : {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return stmt
@@ -664,7 +664,7 @@ def scenario_data_status_update(
         logger.exception(f"Error delete : {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return stmt
@@ -711,7 +711,7 @@ def save_scenario(data, session=None, created_session=False):
         logger.exception(f"Error saving scenario : {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return stmt
@@ -796,7 +796,7 @@ def update_change_value(
         logger.exception(f"Error could not perform SQL query: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return updated_data_list
@@ -833,7 +833,7 @@ def update_amount_type(
         logger.exception(f"Error could not perform SQL query: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
     return updated_data
@@ -862,7 +862,7 @@ def get_secret(orgid=None, Session=create_engine_and_session(database="ccplatfor
         logger.exception(f"Error could not perform SQL query: {e}")
     except Exception as e:
         session.rollback()
-        logger.exception(f"Error in SQL: {e}")
+        logger.exception(f"Error in SQL ORM: {e}")
     finally:
         session.close()
     return SECRET_CLIENT, SECRET_CLIENTID
