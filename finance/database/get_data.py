@@ -122,7 +122,7 @@ def fetch_scenario(formid, userid):
                     FnScenario.scenario_name.label("scenario_name"),
                     FnScenario.is_active.label("scenario_status"),
                 ).join(FnScenarioData, FnScenario.fn_scenario_id == FnScenarioData.fn_scenario_id)
-                .distinct(FnScenario.fn_scenario_id)
+                .group_by(FnScenario.fn_scenario_id)
                 .filter(
                     FnScenario.fn_form_id == formid,
                     FnScenario.created_by == userid,

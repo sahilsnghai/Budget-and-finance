@@ -68,61 +68,10 @@ class CreateHierarchy(APIView):
         return Response(constants.STATUS200, status=meta["code"])
 
     def put(self, req, format=None):
-        try:
-            data = req.data["data"]
-            userid = data["userid"]
-            scenarioid = data["scenarioid"]
-            status = data["status"]
-            formid = data["formid"]
-        except Exception as e:
-            logger.info(f"KEY NOT FOUND {e}")
-            return Response(
-                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
-            )
-        try:
-            data = scenario_status_update(
-                userid=userid, scenarioid=scenarioid, formid=formid, status=status
-            )
-            meta = {"code": HTTP_200_OK}
-        except Exception as e:
-            logger.info(f"Exception in creating hierarchy -> {e}")
-            data = {}
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
-        create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return CreateScenario().put(req=req)
 
     def delete(self, req, format=None):
-        try:
-            data = req.data["data"]
-            userid = data["userid"]
-            scenarioid = data["scenarioid"]
-            status = data["status"]
-            formid = data["formid"]
-        except Exception as e:
-            logger.info(f"KEY NOT FOUND {e}")
-            return Response(
-                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
-            )
-        try:
-            logger.info(f"{status} {type(status)}")
-            data = scenario_data_status_update(
-                userid, scenarioid, formid, status, session=None, created_session=False
-            )
-            meta = {"code": HTTP_200_OK}
-        except Exception as e:
-            logger.info(f"Exception in creating hierarchy -> {e}")
-            data = {}
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
-        create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return CreateScenario().delete(req=req)
 
     @staticmethod
     def save_matrix(df, filename, **kwargs):
@@ -191,6 +140,63 @@ class CreateScenario(APIView):
                 meta = {"code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating Scenario -> {e}")
+            meta = {
+                "error_message": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=meta["code"])
+
+    def put(self, req, format=None):
+        try:
+            data = req.data["data"]
+            userid = data["userid"]
+            scenarioid = data["scenarioid"]
+            status = data["status"]
+            formid = data["formid"]
+        except Exception as e:
+            logger.info(f"KEY NOT FOUND {e}")
+            return Response(
+                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+            )
+        try:
+            data = scenario_status_update(
+                userid=userid, scenarioid=scenarioid, formid=formid, status=status
+            )
+            meta = {"code": HTTP_200_OK}
+        except Exception as e:
+            logger.info(f"Exception in creating hierarchy -> {e}")
+            data = {}
+            meta = {
+                "error_message": str(e),
+                "error": True,
+                "code": HTTP_500_INTERNAL_SERVER_ERROR,
+            }
+        create_response(data, **meta)
+        return Response(constants.STATUS200, status=meta["code"])
+
+    def delete(self, req, format=None):
+        try:
+            data = req.data["data"]
+            userid = data["userid"]
+            scenarioid = data["scenarioid"]
+            status = data["status"]
+            formid = data["formid"]
+        except Exception as e:
+            logger.info(f"KEY NOT FOUND {e}")
+            return Response(
+                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+            )
+        try:
+            logger.info(f"{status} {type(status)}")
+            data = scenario_data_status_update(
+                userid, scenarioid, formid, status, session=None, created_session=False
+            )
+            meta = {"code": HTTP_200_OK}
+        except Exception as e:
+            logger.info(f"Exception in creating hierarchy -> {e}")
+            data = {}
             meta = {
                 "error_message": str(e),
                 "error": True,

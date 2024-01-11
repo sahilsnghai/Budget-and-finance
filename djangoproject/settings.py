@@ -118,11 +118,6 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3"
-        # "NAME": connection.get("schema"),
-        # "USER": connection.get("userName"),
-        # "HOST": connection.get("host"),
-        # "PORT": connection.get("port"),
-        # "PASSWORD": connection.get("password")
     },
     "financeApp":{
         "ENGINE": financeApp.get("driver"),
@@ -178,7 +173,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "apps/static/")
 ]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 MEDIA_ROOT = BASE_DIR / 'media'
