@@ -14,7 +14,7 @@ from .models import (
 from .forms import UserRegistrationForm, TmTaskForm, TmProjectForm, TmTaskInfoForm
 from django.utils import timezone
 
-from djangoproject.main_logger import set_up_logging
+from lumenore_apps.main_logger import set_up_logging
 from django.conf import settings
 
 logger = set_up_logging()

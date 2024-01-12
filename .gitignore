@@ -13,4 +13,5 @@ launch.*
 
 .vscode
 .coverage
+coverage.xml
 dependency-check-report.html

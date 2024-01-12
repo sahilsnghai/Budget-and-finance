@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from djangoproject.constants import Constants
+from lumenore_apps.constants import Constants
 from urllib.parse import quote_plus
 
 constants = Constants()

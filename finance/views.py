@@ -7,7 +7,7 @@ from rest_framework.status import (
 )
 from rest_framework.views import APIView
 from .utils import create_response, format_df, create_filter, COLUMNS
-from djangoproject import Constants, set_up_logging
+from lumenore_apps import Constants, set_up_logging
 from .database.get_data import (
     create_form,
     create_user_data,

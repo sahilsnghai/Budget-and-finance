@@ -1,5 +1,5 @@
-from djangoproject.main_logger import set_up_logging
-from djangoproject.constants import Constants
+from lumenore_apps.main_logger import set_up_logging
+from lumenore_apps.constants import Constants
 from django.http import JsonResponse, HttpResponse
 from rest_framework.status import HTTP_401_UNAUTHORIZED
 

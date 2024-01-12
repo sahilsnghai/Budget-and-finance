@@ -1,6 +1,6 @@
-from djangoproject.constants import Constants
+from lumenore_apps.constants import Constants
 from rest_framework.status import HTTP_200_OK
-from djangoproject.main_logger import set_up_logging
+from lumenore_apps.main_logger import set_up_logging
 
 
 constants = Constants()
@@ -21,6 +21,13 @@ COLUMNS = {
 
 
 def create_response(data, code=HTTP_200_OK, error=False, **kwags):
+    '''create_response universal response format
+
+    Args:
+        data (response data):
+        code (HTTP Codes, optional): Defaults to HTTP_200_OK.
+        error (bool, optional): Defaults to False.
+    '''
     logger.info(f"kwags = {kwags}")
     constants.STATUS200["error"] = error
 
@@ -36,6 +43,14 @@ def create_response(data, code=HTTP_200_OK, error=False, **kwags):
 
 
 def format_df(df, **kwargs):
+    '''format_df to format data
+
+    Args:
+        df (dataframe):
+
+    Returns:
+        format data: datadrame
+    '''
     logger.info(f"Before renaming: {df.columns}")
     df = df.rename(columns=COLUMNS)
     if common_columns := set(["data_id", "base value"]).intersection(df.columns):
@@ -57,6 +72,14 @@ def format_df(df, **kwargs):
 
 
 def create_filter(datalist):
+    '''create_filter to filter out data which needs to be updated
+
+    Args:
+        datalist (list(dicts)): _description_
+
+    Returns:
+        zip object: {filters: values}
+    '''
     logger.info("Creating filters.")
     filters_list = []
     changes_list = []

@@ -10,7 +10,7 @@ def client():
     return APIClient()
 
 
-def test_form_status(client):
+def test_form_status(client: APIClient):
     """Change Form Status
 
     Args:
@@ -34,7 +34,7 @@ def test_form_status(client):
     assert response.json()["data"] == 1
 
 
-def CRUD_scenario(client):
+def crud_scenario(client):
     """
     test_create_save_scenario
 
@@ -59,7 +59,7 @@ def CRUD_scenario(client):
     body = response.json()
 
     assert response.status_code == 200
-    assert type(body["data"]) == dict
+    assert isinstance(type(body["data"]), dict)
     assert body["data"]["scenario_status"] == True
 
     scenarioid = body["data"]["scenarioid"]
@@ -78,7 +78,6 @@ def CRUD_scenario(client):
         headers=headers,
         data=save_payload,
     )
-    body = response.json()
 
     assert response.status_code == 200
     assert response.json()["data"] == 1
@@ -96,7 +95,6 @@ def CRUD_scenario(client):
         headers=headers,
         data=create_payload,
     )
-    body = response.json()
 
     assert response.status_code == 500
     assert response.json()["error_message"] == "Scenario already exits"
@@ -122,7 +120,7 @@ def CRUD_scenario(client):
     assert response.json()["data"] == 1
 
 
-def test_filter_form(client):
+def test_filter_form(client: APIClient):
     """fetch filter form
 
     Args:
@@ -145,7 +143,7 @@ def test_filter_form(client):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_filter_scenario(client):
+def test_filter_scenario(client: APIClient):
     """fetch filter form
 
     Args:
@@ -170,7 +168,7 @@ def test_filter_scenario(client):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_get_data(client):
+def test_get_data(client: APIClient):
     """fetch filter form
 
     Args:
@@ -193,7 +191,7 @@ def test_get_data(client):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_filter_column(client):
+def test_filter_column(client: APIClient):
     """fetch filter form
 
     Args:
@@ -219,7 +217,7 @@ def test_filter_column(client):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_get_scenario(client):
+def test_get_scenario(client: APIClient):
     """fetch filter form
 
     Args:
@@ -243,7 +241,7 @@ def test_get_scenario(client):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_update_scenario(client):
+def test_update_scenario(client: APIClient):
     """fetch filter form
 
     Args:

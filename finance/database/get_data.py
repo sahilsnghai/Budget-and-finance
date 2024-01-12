@@ -1,6 +1,6 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_, case, func, literal, desc
-from djangoproject.main_logger import set_up_logging
+from lumenore_apps.main_logger import set_up_logging
 from time import perf_counter
 from .db import create_engine_and_session
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData, JwtSettings
