@@ -47,7 +47,7 @@ class CreateHierarchy(APIView):
         except Exception as e:
             logger.info(f"KEY NOT FOUND {e}")
             return Response(
-                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+                {"KeyError": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         data = None
         try:
@@ -77,7 +77,7 @@ class CreateHierarchy(APIView):
     def save_matrix(df, filename, **kwargs):
         try:
             if list(df.columns.to_list()) != list(COLUMNS.keys()):
-                raise Exception("Invalid Column Names.")
+                raise KeyError("Invalid Column Names.")
             formid = create_form(filename, kwargs.get("userid"), kwargs.get("orgid"))
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
@@ -103,7 +103,7 @@ class CreateScenario(APIView):
         except Exception as e:
             logger.info(f"KEY NOT FOUND {e}")
             return Response(
-                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+                {"KeyError": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         data = None
         try:
@@ -129,7 +129,7 @@ class CreateScenario(APIView):
                     dataframe=dataframe, scenarioid=scenarioid, session=session
                 )
                 logger.info(f"time taken to migrate {perf_counter() - start}")
-                # user_scenario_data = get_user_scenario_new(scenarioid=scenarioid, formid=formid, session=session)
+                '''# user_scenario_data = get_user_scenario_new(scenarioid=scenarioid, formid=formid, session=session)'''
                 logger.info(f"created scenario with id {scenarioid}")
                 data = {
                     "scenarioid": scenarioid,
@@ -158,7 +158,7 @@ class CreateScenario(APIView):
         except Exception as e:
             logger.info(f"KEY NOT FOUND {e}")
             return Response(
-                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+                {"KeyError": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         try:
             data = scenario_status_update(
@@ -186,7 +186,7 @@ class CreateScenario(APIView):
         except Exception as e:
             logger.info(f"KEY NOT FOUND {e}")
             return Response(
-                {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
+                {"KeyError": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         try:
             logger.info(f"{status} {type(status)}")
@@ -218,7 +218,7 @@ class UpdateChangePrecentage(APIView):
             data = update_scenario_percentage(
                 data, filters, userid=userid, scenarioid=scenarioid
             )
-            logger.info(f"Calculation done")
+            logger.info("Calculation done")
             meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
         except Exception as e:
@@ -323,7 +323,7 @@ class GetData(APIView):
         return Response(constants.STATUS200, status=meta["code"])
 
 
-class filterColumn(APIView):
+class FilterColumn(APIView):
     def post(self, req, format=None):
         data = {}
         try:
@@ -405,7 +405,7 @@ class UpdateBudget(APIView):
             data = update_amount_type(
                 date, amount_type, userid=userid, scenarioid=scenarioid
             )
-            logger.info(f"Calculation done")
+            logger.info("Status update")
             meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
@@ -432,7 +432,7 @@ class UpdateChangeValue(APIView):
             data = update_change_value(
                 data, filters, userid=userid, scenarioid=scenarioid
             )
-            logger.info(f"Calculation done")
+            logger.info("Calculation done")
             meta = {"code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
@@ -461,7 +461,7 @@ class TokenAPIView(APIView):
             SECRET_CLIENT, SECRET_CLIENTID =  get_secret(orgid=orgid)
 
             if SECRET_CLIENT == None or SECRET_CLIENTID == None:
-                raise Exception({"Invalid Organization Id": f"Organization {orgid}, Not Found"})
+                raise ValueError(f"Invalid Organization Id: Organization {orgid} not found")
 
             payload = {
                 "clientSecret": SECRET_CLIENT,
@@ -493,13 +493,14 @@ class TokenAPIView(APIView):
 
             if response.status_code == 200:
                 redirect_url = response.text.strip('"')
-                logger.info(redirect_url)
             else:
                 logger.exception(f"Error: {response.status_code} - {response.text}")
+                redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
 
         except Exception as e:
             logger.exception(f"exception while fetching form names:  {e}")
             redirect_url = constants.get_config("parameters", "financeAppRedirectUrl")
+        logger.info(redirect_url)
 
         return HttpResponseRedirect(redirect_to=redirect_url)
 

@@ -11,4 +11,6 @@ db.sqlite3
 *.zip
 launch.*
 
+.vscode
 .coverage
+dependency-check-report.html

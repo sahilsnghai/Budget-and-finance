@@ -24,14 +24,26 @@ def receive_query(query):
 
 
 def create_form(form_name, lum_user_id, lum_org_id):
+    """Create Entry in fn_form
+
+    Args:
+        form_name (int):
+        lum_user_id (int):
+        lum_org_id (int):
+
+    Returns:
+        formid :int
+    """
     form_name = form_name.split(".")[0]
     formid = {}
     try:
-        logger.info(f"creating form")
+        logger.info("creating form")
         with Session() as session:
             (
                 session.query(FnForm)
-                .filter(FnForm.lum_org_id == lum_org_id, FnForm.created_by == lum_user_id)
+                .filter(
+                    FnForm.lum_org_id == lum_org_id, FnForm.created_by == lum_user_id
+                )
                 .update({"is_active": False}, synchronize_session="fetch")
             )
 
@@ -56,16 +68,25 @@ def create_form(form_name, lum_user_id, lum_org_id):
 
 
 def create_user_data(df, formid, userid):
+    """Create Entry in fn_user_data
+
+    Args:
+        df (Database):
+        formid (int):
+        userid (int):
+
+    Returns:
+        user_data: [{......}]
+    """
     user_data = {}
     try:
-        logger.info(f"Updating user data")
+        logger.info("Updating user data")
         df = df.dropna()
         with Session() as session:
             data = df.to_dict(orient="records")
 
             session.bulk_insert_mappings(FnUserData, data)
             session.commit()
-
 
             logger.info(
                 f"User data saved with ID : {formid} and len is {len(user_data)} "
@@ -82,6 +103,15 @@ def create_user_data(df, formid, userid):
 
 
 def fetch_from(userid, orgid):
+    """Fetch form data
+
+    Args:
+        userid (int):
+        orgid (int):
+
+    Returns:
+        form names: [{...}]
+    """
     form_names = {}
     try:
         logger.info(f"Fetching forms for user {userid}")
@@ -95,7 +125,9 @@ def fetch_from(userid, orgid):
                     FnForm.lum_user_id == userid,
                     FnForm.lum_org_id == orgid,
                     FnForm.is_active == True,
-                ).order_by(desc(FnForm.fn_form_id)).limit(1)
+                )
+                .order_by(desc(FnForm.fn_form_id))
+                .limit(1)
                 .all()
             )
             logger.info(f"Form_name for user {userid}")
@@ -111,6 +143,15 @@ def fetch_from(userid, orgid):
 
 
 def fetch_scenario(formid, userid):
+    """fetch scenarios
+
+    Args:
+        formid (int):
+        userid (int):
+
+    Returns:
+        scenario_names: [{......}]
+    """
     scenario_names = {}
     try:
         logger.info(f"fetch scenario for form id {formid} and user {userid}")
@@ -121,13 +162,17 @@ def fetch_scenario(formid, userid):
                     FnScenario.scenario_description.label("scenario_description"),
                     FnScenario.scenario_name.label("scenario_name"),
                     FnScenario.is_active.label("scenario_status"),
-                ).join(FnScenarioData, FnScenario.fn_scenario_id == FnScenarioData.fn_scenario_id)
+                )
+                .join(
+                    FnScenarioData,
+                    FnScenario.fn_scenario_id == FnScenarioData.fn_scenario_id,
+                )
                 .group_by(FnScenario.fn_scenario_id)
                 .filter(
                     FnScenario.fn_form_id == formid,
                     FnScenario.created_by == userid,
                     FnScenario.is_draft == False,
-                    FnScenarioData.is_active == True
+                    FnScenarioData.is_active == True,
                 )
                 .all()
             )
@@ -145,6 +190,17 @@ def fetch_scenario(formid, userid):
 
 
 def get_user_data(formid, userid, session=None, created_session=False, **karwgs):
+    """fetch user data from fn_user_data
+
+    Args:
+        formid (int):
+        userid (int):
+        session (session object, optional): Defaults to None.
+        created_session (bool, optional): Defaults to False.
+
+    Returns:
+        user_data: [{....}]
+    """
     user_data = {}
     try:
         logger.info(f"getting user data for form id {formid}")
@@ -213,6 +269,16 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
 
 
 def filter_column(scenarioid, formid, userid, **kwargs):
+    """fetch and filter user scenario data
+
+    Args:
+        scenarioid (int):
+        formid (int):
+        userid (int):
+
+    Returns:
+        user_data:[{.....}]
+    """
     user_data = {}
     try:
         logger.info(f"getting user data for form id {scenarioid}")
@@ -302,10 +368,28 @@ def create_scenario(
     session=None,
     created_session=False,
 ):
+    """Create New Scenario
+
+    Args:
+        scenario_name (string):
+        scenario_decription (string):
+        formid (int):
+        userid (int):
+        session (session, optional): Defaults to None.
+        created_session (bool, optional): Defaults to False.
+
+    Raises:
+        Exception:
+        e: "Scenario already exits"
+
+    Returns:
+        scenarioid: int
+        status: bool
+    """
     scenarioid = status = None
 
     try:
-        logger.info(f"creating form")
+        logger.info("creating form")
 
         if session is None:
             session = Session()
@@ -319,7 +403,7 @@ def create_scenario(
         )
 
         logger.info(scenario_name_list)
-        if not scenario_name in scenario_name_list:
+        if scenario_name not in scenario_name_list:
             scenario_instance = FnScenario(
                 fn_form_id=formid,
                 scenario_name=scenario_name,
@@ -334,7 +418,7 @@ def create_scenario(
             status = scenario_instance.is_active
         else:
             logger.info(f"found similar. scenario_name for {userid}")
-            raise Exception("Scenario already exits")
+            raise ValueError("Scenario already exists")
     except SQLAlchemyError as e:
         session.rollback()
         logger.exception(f"Error saveing and creating scenario: {e}")
@@ -350,12 +434,20 @@ def create_scenario(
 def create_user_data_scenario(
     dataframe, scenarioid, session=None, created_session=False
 ):
+    """Migrate user data from fn_user_data to fn_scenario_data
+
+    Args:
+        dataframe (list(dict)):
+        scenarioid (ing):
+        session (session, optional): Defaults to None.
+        created_session (bool, optional): Defaults to False.
+    """
     try:
         if session is None:
             session = Session()
             created_session = True
 
-        logger.info(f"Updating user data")
+        logger.info("Updating user data")
         start = perf_counter()
         session.bulk_insert_mappings(FnScenarioData, dataframe)
         session.commit()
@@ -369,16 +461,27 @@ def create_user_data_scenario(
         logger.exception(f"Error in SQL ORM: {e}")
     finally:
         created_session and session.close()
-    return
+
 
 def get_user_scenario_new(scenarioid, formid, session=None, created_session=False):
+    """Fetch user scenario data
+
+    Args:
+        scenarioid (int):
+        formid (int):
+        session (_type_, optional):. Defaults to None.
+        created_session (bool, optional):. Defaults to False.
+
+    Returns:
+        _type_:
+    """
     scenario_data = {}
     try:
         if session is None:
             session = Session()
             created_session = True
 
-        logger.info(f"fetching user data")
+        logger.info("fetching user data")
         start = perf_counter()
 
         scenario_data = receive_query(
@@ -420,9 +523,8 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
             )
             .join(
                 FnScenario, FnScenario.fn_scenario_id == FnScenarioData.fn_scenario_id
-            ).join(
-                FnForm, FnScenario.fn_form_id == FnForm.fn_form_id
             )
+            .join(FnForm, FnScenario.fn_form_id == FnForm.fn_form_id)
             .filter(
                 FnForm.is_active == True,
                 FnScenario.fn_form_id == formid,
@@ -449,6 +551,19 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
 def update_scenario_percentage(
     data, filters_list, userid, scenarioid, session=None, created_session=False
 ):
+    """This function update Change value column in fn_scenario_data.
+
+    Args:
+        data (dict):
+        filters_list (list):
+        userid (int):
+        scenarioid (int):
+        session (session, optional): Defaults to None.
+        created_session (bool, optional): Defaults to False.
+
+    Returns:
+        updated_data_list: [{.......}]
+    """
     updated_data_list = []
 
     try:
@@ -460,16 +575,16 @@ def update_scenario_percentage(
         start = perf_counter()
         logger.info(f"{data}")
         for filters, update in filters_list:
-            logger.info(f"Creating Filters")
+            logger.info("Creating Filters")
 
             filter_conditions = [
                 getattr(FnScenarioData, column).ilike(f"{column_value}")
                 for column, column_value in filters.items()
             ]
 
-            logger.info(f"Filters Done")
+            logger.info("Filters Done")
 
-            logger.info(f"Creating Dynamic Filters")
+            logger.info("Creating Dynamic Filters")
 
             dynamic_filter_condition = and_(
                 *filter_conditions,
@@ -481,11 +596,12 @@ def update_scenario_percentage(
             if data.get("date"):
                 dynamic_filter_condition = and_(
                     dynamic_filter_condition,
-                    func.date_format(FnScenarioData.date, data.get("dateformat", "%Y")) == data["date"],
+                    func.date_format(FnScenarioData.date, data.get("dateformat", "%Y"))
+                    == data["date"],
                 )
 
             logger.info(dynamic_filter_condition)
-            logger.info(f"Creating Filters Dynamic Done")
+
             logger.info(f"Before Calculation {update['changePrecentage']=}")
 
             try:
@@ -512,16 +628,18 @@ def update_scenario_percentage(
 
                                     * 100)).label("change_value")
                             ).filter(dynamic_filter_condition)
-                            )
+                    )
                 print(update.statement.compile(dialect=session.bind.dialect, compile_kwargs={"literal_binds": True}))
                 update = receive_query(update.all())[0]
 
                 logger.info(f"New Update Value {update=}")
-                if update["change_value"] is not None :
+                if update["change_value"] is not None:
                     logger.info("start updating")
                     updated_data = (
                         session.query(FnScenarioData)
-                        .filter(dynamic_filter_condition, FnScenarioData.amount_type == 0)
+                        .filter(
+                            dynamic_filter_condition, FnScenarioData.amount_type == 0
+                        )
                         .update(update, synchronize_session="fetch")
                     )
                     logger.info(f"Number of rows updated: {updated_data}")
@@ -531,8 +649,7 @@ def update_scenario_percentage(
                 logger.exception(f"Exception while Updating Change Precentage: {e}")
                 continue
 
-
-            logger.info(f"Fetchning data")
+            logger.info("Fetchning data")
             updated_data_query = receive_query(
                 session.query(
                     FnScenarioData.fn_scenario_data_id.label("data_id"),
@@ -592,6 +709,19 @@ def update_scenario_percentage(
 def scenario_status_update(
     userid, scenarioid, formid, status, session=None, created_session=False
 ):
+    """Scenario
+
+    Args:
+        userid (int):
+        scenarioid (int):
+        formid (int):
+        status (bool):
+        session (session, optional): Defaults to None.
+        created_session (bool, optional): Defaults to False.
+
+    Returns:
+        stmt: int
+    """
     stmt = {}
     try:
         if session is None:
@@ -628,6 +758,22 @@ def scenario_status_update(
 def scenario_data_status_update(
     userid, scenarioid, formid, status, session=None, created_session=False
 ):
+    """scenario_data_status_update
+
+    _extended_summary_
+
+    Args:
+        userid (int): _description_
+        scenarioid (int): _description_
+        formid (int): _description_
+        status (bool): _description_
+        session (session, optional): _description_. Defaults to None.
+        created_session (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
+
     stmt = {}
     try:
         if session is None:
@@ -671,6 +817,16 @@ def scenario_data_status_update(
 
 
 def save_scenario(data, session=None, created_session=False):
+    """save_scenario This function save scenario
+
+    Args:
+        data (dict): _description_
+        session (_type_, optional): _description_. Defaults to None.
+        created_session (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
     stmt = {}
     try:
         start = perf_counter()
@@ -695,13 +851,15 @@ def save_scenario(data, session=None, created_session=False):
 
         logger.info(f"{update_values=}")
         stmt = (
-            session.query(FnScenario).filter(
+            session.query(FnScenario)
+            .filter(
                 FnScenario.created_by == userid,
                 FnScenario.fn_scenario_id == scenarioid,
                 FnScenario.fn_form_id == formid,
-                FnScenario.is_active == True
-            ).update(update_values, synchronize_session="fetch")
+                FnScenario.is_active == True,
             )
+            .update(update_values, synchronize_session="fetch")
+        )
         session.commit()
         logger.info(f"{str(stmt)}")
         logger.info("Scenario Saved")
@@ -720,6 +878,19 @@ def save_scenario(data, session=None, created_session=False):
 def update_change_value(
     data, filters_list, userid=None, scenarioid=None, session=None, created_session=None
 ):
+    '''update_change_value _summary_
+
+    Args:
+        data (dict):
+        filters_list (_type_):
+        userid (int, optional): Defaults to None.
+        scenarioid (int, optional): Defaults to None.
+        session (session, optional): Defaults to None.
+        created_session (bool, optional): Defaults to None.
+
+    Returns:
+        updated_data_list: [{.........}]
+    '''
     updated_data_list = []
 
     try:
@@ -732,16 +903,16 @@ def update_change_value(
         logger.info(data)
 
         for filters, changed in filters_list:
-            logger.info(f"Value Creating Filters")
+            logger.info("Value Creating Filters")
 
             filter_conditions = [
                 getattr(FnScenarioData, column).ilike(f"{column_value}")
                 for column, column_value in filters.items()
             ]
             logger.info(f"Unchanged {changed=}")
-            logger.info(f"Value Filters Done")
+            logger.info("Value Filters Done")
 
-            logger.info(f"Value Creating Dynamic Filters value")
+            logger.info("Value Creating Dynamic Filters value")
 
             try:
                 dynamic_filter_condition = and_(
@@ -762,7 +933,6 @@ def update_change_value(
                 )
 
                 logger.info(dynamic_filter_condition)
-                logger.info(f"Creating Filters Dynamic Done")
                 logger.info(f"{changed=}")
 
                 changed = receive_query(
@@ -805,6 +975,19 @@ def update_change_value(
 def update_amount_type(
     date, amount_type, userid=None, scenarioid=None, session=None, created_session=False
 ):
+    '''update_amount_type _summary_
+
+    Args:
+        date (dict):
+        amount_type (int):
+        userid (int, optional): Defaults to None.
+        scenarioid (int, optional): Defaults to None.
+        session (session, optional): Defaults to None.
+        created_session (bool, optional): Defaults to False.
+
+    Returns:
+        updated_data: int
+    '''
     try:
         if session is None:
             session = Session()
@@ -825,7 +1008,7 @@ def update_amount_type(
         )
         session.commit()
         logger.info(f"len of updated_data_query {updated_data}")
-        logger.info(f"Creating Filters Dynamic Done")
+
         logger.info(f"Time taken by fetching scenario is {perf_counter() - start}")
 
     except SQLAlchemyError as e:
@@ -839,11 +1022,22 @@ def update_amount_type(
     return updated_data
 
 
-def get_secret(orgid=None, Session=create_engine_and_session(database="ccplatform")):
+def get_secret(
+    orgid=None, session_obj=create_engine_and_session(database="ccplatform")
+):
+    '''get_secret from jwt_settings
+
+    Args:
+        orgid (int, optional): Defaults to None.
+        session_obj (session, optional): Defaults to create_engine_and_session(database="ccplatform").
+
+    Returns:
+        SECRET_CLIENT, SECRET_CLIENTID: str, str
+    '''
     SECRET_CLIENT, SECRET_CLIENTID = None, None
     try:
-        session = Session()
-        Client = receive_query(
+        session = session_obj()
+        client = receive_query(
             session.query(
                 JwtSettings.secret.label("SECRET_CLIENT"),
                 JwtSettings.client_id.label("SECRET_CLIENTID"),
@@ -851,10 +1045,10 @@ def get_secret(orgid=None, Session=create_engine_and_session(database="ccplatfor
             .filter(JwtSettings.organizationId == orgid)
             .all()
         )[0]
-        logger.info(f"{Client=}")
+        logger.info(f"{client=}")
         SECRET_CLIENT, SECRET_CLIENTID = (
-            Client["SECRET_CLIENT"],
-            Client["SECRET_CLIENTID"],
+            client["SECRET_CLIENT"],
+            client["SECRET_CLIENTID"],
         )
 
     except SQLAlchemyError as e:

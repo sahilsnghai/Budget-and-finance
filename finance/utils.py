@@ -32,10 +32,10 @@ def create_response(data, code=HTTP_200_OK, error=False, **kwags):
     constants.STATUS200["status"]["code"] = code
     constants.STATUS200["data"] = data
     logger.info(f" {constants.engine.pool.status()} ")
-    logger.info(f"-" * 100)
+    logger.info("-" * 100)
 
 
-def format_df(df, *args, **kwargs):
+def format_df(df, **kwargs):
     logger.info(f"Before renaming: {df.columns}")
     df = df.rename(columns=COLUMNS)
     if common_columns := set(["data_id", "base value"]).intersection(df.columns):
@@ -57,7 +57,7 @@ def format_df(df, *args, **kwargs):
 
 
 def create_filter(datalist):
-    logger.info(f"Creating filters.")
+    logger.info("Creating filters.")
     filters_list = []
     changes_list = []
     change_value = {}
@@ -91,6 +91,6 @@ def create_filter(datalist):
 
     logger.info(filters_list)
     logger.info(changes_list)
-    logger.info(f"Filters created.")
+    logger.info("Filters created.")
 
     return zip(filters_list, changes_list)
