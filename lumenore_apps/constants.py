@@ -77,5 +77,5 @@ class Constants(metaclass=ConstantsMeta):
 
                 except KeyError:
                     return "local"
-        except:
+        except Exception:
             return "Local"

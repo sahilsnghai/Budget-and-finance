@@ -608,23 +608,23 @@ def update_scenario_percentage(
                 update = (
                     session.query(
                         case(
-                            (update['changePrecentage'] == 0.0, 0.0),
+                            (update['changePrecentage'] == 0, 0.0),
                             (update['changePrecentage'] == -100, -100),
-                            else_=(((-1 +
+                            else_=((-1 +
                                     ((func.sum(
-                                        case(((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
+                                        case((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1))),
                                             else_=0.0)
                                     ) +
                                     func.sum(
-                                        case(((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
-                                    )) * update['changePrecentage'] -
+                                        case((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
+                                    ) * update['changePrecentage'] -
                                     func.sum(
-                                        case(((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
+                                        case((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
                                             else_=0.0)
-                                    )) /
+                                    ) /
                                     func.sum(
-                                        case(((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
-                                    )))
+                                        case((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
+                                    )
 
                                     * 100)).label("change_value")
                             ).filter(dynamic_filter_condition)

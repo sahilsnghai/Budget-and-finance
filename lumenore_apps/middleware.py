@@ -45,11 +45,10 @@ def process_req(req):
     resp
     """
     try:
-        # token = get_token(req.headers["Authorization"])
         token = req.headers.get("Authorization")
         logger.info(f"{token=}")
         if token and not _token_is_valid(token, req):
-            raise Exception("Unauthentication")
+            raise PermissionError("Unauthentication")
         auth = True
     except Exception as e:
         logger.exception(f"Authentication failed due to {e}")
@@ -95,7 +94,7 @@ def get_token(token, version=None):
         )
         headers = {"version": "qa", "Authorization": f"{token[0]} {token[1]}"}
         response = get(url, headers=headers).json()["data"]
-        response = f'{token[0]} {response}' or token
+        response = f'{token[0]} {response}' if response else token
     except Exception as e:
         token = jwt.decode(token)
         logger.exception(f"error in getting bigget token {e}")

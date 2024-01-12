@@ -30,7 +30,7 @@ SECRET_KEY = "pkttgz6y#n+v@rv8xpzph9k!a)z#o+kf3aczy$lqsm+f@kcf@-"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-# LOGIN_URL = 'login'
+'''# LOGIN_URL = 'login'''
 
 ALLOWED_HOSTS = ['.lumenore.com', "*"]
 
@@ -47,12 +47,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    # "taskmanager.apps.TaskmanagerConfig",
-    # "livesync",
 
     'finance.apps.FinanceConfig',
     'rest_framework',
 ]
+
+'''# "taskmanager.apps.TaskmanagerConfig",
+# "livesync",'''
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -134,7 +135,7 @@ DATABASES = {
 # Password validation
 # https://docs.lumenore_apps.com/en/4.2/ref/settings/#auth-password-validators
 
-# AUTH_USER_MODEL = "taskmanager.TmUser"
+'''# AUTH_USER_MODEL = "taskmanager.TmUser"'''
 
 AUTH_PASSWORD_VALIDATORS = [
     {
