@@ -1,5 +1,21 @@
+# Copyright © Lumenore Inc. All rights reserved.
+# This software is the confidential and proprietary information of
+# Lumenore Inc. "Confidential Information".
+# You shall * not disclose such Confidential Information and shall use it only in
+# accordance with the terms of the intellectual property agreement
+# you entered into with Lumenore Inc.
+# THIS SOFTWARE IS INTENDED STRICTLY FOR USE BY Lumenore Inc.
+# AND ITS PARENT AND/OR SUBSIDIARY COMPANIES. Lumenore
+# MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE SOFTWARE,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+# Lumenore SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY ANY PARTY AS A RESULT
+# OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
+
+"""get_data"""
+
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, case, func, literal, desc
+from sqlalchemy import and_, case, func, literal, desc, select
 from lumenore_apps.main_logger import set_up_logging
 from time import perf_counter
 from .db import create_engine_and_session
@@ -7,6 +23,44 @@ from .models import FnForm, FnUserData, FnScenario, FnScenarioData, JwtSettings
 
 Session = create_engine_and_session()
 logger = set_up_logging()
+
+
+SELECT_SENARIO_ITEMS = (
+        FnScenarioData.fn_scenario_data_id.label("data_id"),
+        func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
+        FnScenarioData.receipt_number.label("Receipt Number"),
+        FnScenarioData.business_unit.label("Business Unit"),
+        FnScenarioData.account_type.label("Account Type"),
+        FnScenarioData.account_subtype.label("Account SubType"),
+        FnScenarioData.project_name.label("Project Name"),
+        case(
+            (FnScenarioData.amount_type == 1, "Actual"),
+            (FnScenarioData.amount_type == 0, "Budget"),
+            else_="Unknown",
+        ).label("Amount Type"),
+        func.round(
+            FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1),
+            3,
+        ).label("Amount"),
+        FnScenarioData.amount.label("base value"),
+        FnScenarioData.customer_name.label("Customer Name"),
+        FnScenarioData.change_value.label("changePrecentage"),
+        case(
+            (func.extract("month", FnScenarioData.date) == 1, "January"),
+            (func.extract("month", FnScenarioData.date) == 2, "February"),
+            (func.extract("month", FnScenarioData.date) == 3, "March"),
+            (func.extract("month", FnScenarioData.date) == 4, "April"),
+            (func.extract("month", FnScenarioData.date) == 5, "May"),
+            (func.extract("month", FnScenarioData.date) == 6, "June"),
+            (func.extract("month", FnScenarioData.date) == 7, "July"),
+            (func.extract("month", FnScenarioData.date) == 8, "August"),
+            (func.extract("month", FnScenarioData.date) == 9, "September"),
+            (func.extract("month", FnScenarioData.date) == 10, "October"),
+            (func.extract("month", FnScenarioData.date) == 11, "November"),
+            (func.extract("month", FnScenarioData.date) == 12, "December"),
+            else_="",
+        ).label("Month")
+)
 
 
 def receive_query(query):
@@ -67,7 +121,7 @@ def create_form(form_name, lum_user_id, lum_org_id):
     return formid
 
 
-def create_user_data(df, formid, userid):
+def create_user_data(df, formid):
     """Create Entry in fn_user_data
 
     Args:
@@ -286,42 +340,7 @@ def filter_column(scenarioid, formid, userid, **kwargs):
             start = perf_counter()
             query = (
                 session.query(
-                    FnScenarioData.fn_scenario_data_id.label("data_id"),
-                    func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
-                    FnScenarioData.receipt_number.label("Receipt Number"),
-                    FnScenarioData.business_unit.label("Business Unit"),
-                    FnScenarioData.account_type.label("Account Type"),
-                    FnScenarioData.account_subtype.label("Account SubType"),
-                    FnScenarioData.project_name.label("Project Name"),
-                    case(
-                        (FnScenarioData.amount_type == 1, "Actual"),
-                        (FnScenarioData.amount_type == 0, "Budget"),
-                        else_="Unknown",
-                    ).label("Amount Type"),
-                    (
-                        (
-                            FnScenarioData.amount
-                            * (FnScenarioData.change_value / 100 + 1)
-                        ).label("Amount")
-                    ),
-                    FnScenarioData.customer_name.label("Customer Name"),
-                    FnScenarioData.amount.label("base value"),
-                    FnScenarioData.change_value.label("changePrecentage"),
-                    case(
-                        (func.extract("month", FnScenarioData.date) == 1, "January"),
-                        (func.extract("month", FnScenarioData.date) == 2, "February"),
-                        (func.extract("month", FnScenarioData.date) == 3, "March"),
-                        (func.extract("month", FnScenarioData.date) == 4, "April"),
-                        (func.extract("month", FnScenarioData.date) == 5, "May"),
-                        (func.extract("month", FnScenarioData.date) == 6, "June"),
-                        (func.extract("month", FnScenarioData.date) == 7, "July"),
-                        (func.extract("month", FnScenarioData.date) == 8, "August"),
-                        (func.extract("month", FnScenarioData.date) == 9, "September"),
-                        (func.extract("month", FnScenarioData.date) == 10, "October"),
-                        (func.extract("month", FnScenarioData.date) == 11, "November"),
-                        (func.extract("month", FnScenarioData.date) == 12, "December"),
-                        else_="",
-                    ).label("Month"),
+                    *SELECT_SENARIO_ITEMS,
                     (func.extract("year", FnScenarioData.date).label("year")),
                 )
                 .join(
@@ -485,42 +504,7 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
         start = perf_counter()
 
         scenario_data = receive_query(
-            session.query(
-                FnScenarioData.fn_scenario_data_id.label("data_id"),
-                func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
-                FnScenarioData.receipt_number.label("Receipt Number"),
-                FnScenarioData.business_unit.label("Business Unit"),
-                FnScenarioData.account_type.label("Account Type"),
-                FnScenarioData.account_subtype.label("Account SubType"),
-                FnScenarioData.project_name.label("Project Name"),
-                case(
-                    (FnScenarioData.amount_type == 1, "Actual"),
-                    (FnScenarioData.amount_type == 0, "Budget"),
-                    else_="Unknown",
-                ).label("Amount Type"),
-                func.round(
-                    FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1),
-                    3,
-                ).label("Amount"),
-                FnScenarioData.amount.label("base value"),
-                FnScenarioData.customer_name.label("Customer Name"),
-                FnScenarioData.change_value.label("changePrecentage"),
-                case(
-                    (func.extract("month", FnScenarioData.date) == 1, "January"),
-                    (func.extract("month", FnScenarioData.date) == 2, "February"),
-                    (func.extract("month", FnScenarioData.date) == 3, "March"),
-                    (func.extract("month", FnScenarioData.date) == 4, "April"),
-                    (func.extract("month", FnScenarioData.date) == 5, "May"),
-                    (func.extract("month", FnScenarioData.date) == 6, "June"),
-                    (func.extract("month", FnScenarioData.date) == 7, "July"),
-                    (func.extract("month", FnScenarioData.date) == 8, "August"),
-                    (func.extract("month", FnScenarioData.date) == 9, "September"),
-                    (func.extract("month", FnScenarioData.date) == 10, "October"),
-                    (func.extract("month", FnScenarioData.date) == 11, "November"),
-                    (func.extract("month", FnScenarioData.date) == 12, "December"),
-                    else_="",
-                ).label("Month"),
-            )
+            session.query(*SELECT_SENARIO_ITEMS)
             .join(
                 FnScenario, FnScenario.fn_scenario_id == FnScenarioData.fn_scenario_id
             )
@@ -583,7 +567,6 @@ def update_scenario_percentage(
             ]
 
             logger.info("Filters Done")
-
             logger.info("Creating Dynamic Filters")
 
             dynamic_filter_condition = and_(
@@ -601,7 +584,6 @@ def update_scenario_percentage(
                 )
 
             logger.info(dynamic_filter_condition)
-
             logger.info(f"Before Calculation {update['changePrecentage']=}")
 
             try:
@@ -612,23 +594,27 @@ def update_scenario_percentage(
                             (update['changePrecentage'] == -100, -100),
                             else_=((-1 +
                                     ((func.sum(
-                                        case((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1))),
+                                        case((FnScenarioData.amount_type == 1,
+                                              (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1))),
                                             else_=0.0)
                                     ) +
                                     func.sum(
-                                        case((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
+                                        case((FnScenarioData.amount_type == 0,
+                                              FnScenarioData.amount)), else_=0.0)
                                     ) * update['changePrecentage'] -
                                     func.sum(
-                                        case((FnScenarioData.amount_type == 1, (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
+                                        case((FnScenarioData.amount_type == 1,
+                                              (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
                                             else_=0.0)
                                     ) /
                                     func.sum(
-                                        case((FnScenarioData.amount_type == 0, FnScenarioData.amount)), else_=0.0)
+                                        case((FnScenarioData.amount_type == 0,
+                                              FnScenarioData.amount)), else_=0.0)
                                     )
 
                                     * 100)).label("change_value")
-                            ).filter(dynamic_filter_condition)
-                    )
+                                            ).filter(dynamic_filter_condition)
+                                    )
                 print(update.statement.compile(dialect=session.bind.dialect, compile_kwargs={"literal_binds": True}))
                 update = receive_query(update.all())[0]
 
@@ -652,40 +638,7 @@ def update_scenario_percentage(
             logger.info("Fetchning data")
             updated_data_query = receive_query(
                 session.query(
-                    FnScenarioData.fn_scenario_data_id.label("data_id"),
-                    func.DATE_FORMAT(FnScenarioData.date, "%Y%m%d").label("Date"),
-                    FnScenarioData.receipt_number.label("Receipt Number"),
-                    FnScenarioData.business_unit.label("Business Unit"),
-                    FnScenarioData.account_type.label("Account Type"),
-                    FnScenarioData.account_subtype.label("Account SubType"),
-                    FnScenarioData.project_name.label("Project Name"),
-                    FnScenarioData.customer_name.label("Customer Name"),
-                    case(
-                        (FnScenarioData.amount_type == 1, "Actual"),
-                        (FnScenarioData.amount_type == 0, "Budget"),
-                        else_="Unknown",
-                    ).label("Amount Type"),
-                    func.round(
-                        FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1),
-                        3,
-                    ).label("Amount"),
-                    FnScenarioData.amount.label("base value"),
-                    FnScenarioData.change_value.label("changePrecentage"),
-                    case(
-                        (func.extract("month", FnScenarioData.date) == 1, "January"),
-                        (func.extract("month", FnScenarioData.date) == 2, "February"),
-                        (func.extract("month", FnScenarioData.date) == 3, "March"),
-                        (func.extract("month", FnScenarioData.date) == 4, "April"),
-                        (func.extract("month", FnScenarioData.date) == 5, "May"),
-                        (func.extract("month", FnScenarioData.date) == 6, "June"),
-                        (func.extract("month", FnScenarioData.date) == 7, "July"),
-                        (func.extract("month", FnScenarioData.date) == 8, "August"),
-                        (func.extract("month", FnScenarioData.date) == 9, "September"),
-                        (func.extract("month", FnScenarioData.date) == 10, "October"),
-                        (func.extract("month", FnScenarioData.date) == 11, "November"),
-                        (func.extract("month", FnScenarioData.date) == 12, "December"),
-                        else_="",
-                    ).label("Month"),
+                    *SELECT_SENARIO_ITEMS
                 )
                 .filter(dynamic_filter_condition)
                 .all()
@@ -763,15 +716,15 @@ def scenario_data_status_update(
     _extended_summary_
 
     Args:
-        userid (int): _description_
-        scenarioid (int): _description_
-        formid (int): _description_
-        status (bool): _description_
-        session (session, optional): _description_. Defaults to None.
-        created_session (bool, optional): _description_. Defaults to False.
+        userid (int):
+        scenarioid (int):
+        formid (int):
+        status (bool):
+        session (session, optional):. Defaults to None.
+        created_session (bool, optional):. Defaults to False.
 
     Returns:
-        _type_: _description_
+        _type_:
     """
 
     stmt = {}
@@ -820,12 +773,12 @@ def save_scenario(data, session=None, created_session=False):
     """save_scenario This function save scenario
 
     Args:
-        data (dict): _description_
-        session (_type_, optional): _description_. Defaults to None.
-        created_session (bool, optional): _description_. Defaults to False.
+        data (dict):
+        session (_type_, optional):. Defaults to None.
+        created_session (bool, optional):. Defaults to False.
 
     Returns:
-        _type_: _description_
+        _type_:
     """
     stmt = {}
     try:

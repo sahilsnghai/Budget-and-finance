@@ -1,3 +1,19 @@
+# Copyright © Lumenore Inc. All rights reserved.
+# This software is the confidential and proprietary information of
+# Lumenore Inc. "Confidential Information".
+# You shall * not disclose such Confidential Information and shall use it only in
+# accordance with the terms of the intellectual property agreement
+# you entered into with Lumenore Inc.
+# THIS SOFTWARE IS INTENDED STRICTLY FOR USE BY Lumenore Inc.
+# AND ITS PARENT AND/OR SUBSIDIARY COMPANIES. Lumenore
+# MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE SOFTWARE,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+# Lumenore SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY ANY PARTY AS A RESULT
+# OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
+
+"""utils"""
+
 from lumenore_apps.constants import Constants
 from rest_framework.status import HTTP_200_OK
 from lumenore_apps.main_logger import set_up_logging
@@ -20,12 +36,12 @@ COLUMNS = {
 }
 
 
-def create_response(data, code=HTTP_200_OK, error=False, **kwags):
+def create_response(data, status_code=HTTP_200_OK, error=False, **kwags):
     '''create_response universal response format
 
     Args:
         data (response data):
-        code (HTTP Codes, optional): Defaults to HTTP_200_OK.
+        status_code (HTTP status_code, optional): Defaults to HTTP_200_OK.
         error (bool, optional): Defaults to False.
     '''
     logger.info(f"kwags = {kwags}")
@@ -36,7 +52,7 @@ def create_response(data, code=HTTP_200_OK, error=False, **kwags):
         constants.STATUS200["error_message"] = kwags.get("error_message")
     else:
         constants.STATUS200.pop("error_message", None)
-    constants.STATUS200["status"]["code"] = code
+    constants.STATUS200["status"]["code"] = status_code
     constants.STATUS200["data"] = data
     logger.info(f" {constants.engine.pool.status()} ")
     logger.info("-" * 100)
@@ -75,7 +91,7 @@ def create_filter(datalist):
     '''create_filter to filter out data which needs to be updated
 
     Args:
-        datalist (list(dicts)): _description_
+        datalist (list(dicts)):
 
     Returns:
         zip object: {filters: values}

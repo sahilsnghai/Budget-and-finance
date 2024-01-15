@@ -1,13 +1,31 @@
-from rest_framework.response import Response
+# Copyright © Lumenore Inc. All rights reserved.
+# This software is the confidential and proprietary information of
+# Lumenore Inc. "Confidential Information".
+# You shall * not disclose such Confidential Information and shall use it only in
+# accordance with the terms of the intellectual property agreement
+# you entered into with Lumenore Inc.
+# THIS SOFTWARE IS INTENDED STRICTLY FOR USE BY Lumenore Inc.
+# AND ITS PARENT AND/OR SUBSIDIARY COMPANIES. Lumenore
+# MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE SOFTWARE,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+# Lumenore SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY ANY PARTY AS A RESULT
+# OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
+
+"""views"""
+
+from time import perf_counter
+from lumenore_apps import Constants, set_up_logging
+from rest_framework import response, views, exceptions
+from requests import post
+from .utils import create_response, format_df, create_filter, COLUMNS
+from django.http import HttpResponseRedirect
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
     HTTP_500_INTERNAL_SERVER_ERROR,
-    HTTP_401_UNAUTHORIZED
+    HTTP_405_METHOD_NOT_ALLOWED
 )
-from rest_framework.views import APIView
-from .utils import create_response, format_df, create_filter, COLUMNS
-from lumenore_apps import Constants, set_up_logging
 from .database.get_data import (
     create_form,
     create_user_data,
@@ -27,18 +45,44 @@ from .database.get_data import (
     get_secret,
     Session,
 )
-from time import perf_counter
 import pandas as pd
-
-from requests import post, get
-from django.http import HttpResponseRedirect
 
 
 constants = Constants()
 logger = set_up_logging()
+Response = response.Response
+
+class BaseAPIView(views.APIView):
+    '''BaseAPIView _summary_
+
+    Args:
+        views (_type_):
+    '''
+    def handle_exception(self, exc):
+        logger.info(f"Exception in {self.__class__.__name__} -> {exc}")
+
+        status_code = HTTP_500_INTERNAL_SERVER_ERROR
+
+        if isinstance(exc, exceptions.MethodNotAllowed):
+            status_code = HTTP_405_METHOD_NOT_ALLOWED
+
+        meta = {
+            "error_message": str(exc),
+            "error": True,
+            "status_code": status_code,
+        }
+
+        create_response(None, **meta)
+
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class CreateHierarchy(APIView):
+class CreateHierarchy(BaseAPIView):
+    '''CreateHierarchy _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         try:
             file = req.FILES["file"]
@@ -56,16 +100,12 @@ class CreateHierarchy(APIView):
                 df=pd.read_excel(file), userid=userid, orgid=orgid, filename=file.name
             )
             logger.info(f"time by hierarchy {perf_counter() - start}")
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.info(f"Exception in creating hierarchy -> {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
     def put(self, req, format=None):
         return CreateScenario().put(req=req)
@@ -82,7 +122,7 @@ class CreateHierarchy(APIView):
             if formid is not None:
                 logger.info(f"created form wih id -> {formid}")
                 df = format_df(df, formid=formid, userid=kwargs.get("userid"))
-                create_user_data(df, formid, userid=kwargs.get("userid"))
+                create_user_data(df, formid)
             else:
                 logger.info(f"Could not create form wih id -> {formid}")
 
@@ -92,7 +132,12 @@ class CreateHierarchy(APIView):
         return {"formid": formid}
 
 
-class CreateScenario(APIView):
+class CreateScenario(BaseAPIView):
+    '''CreateScenario _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         try:
             data = req.data["data"]
@@ -129,7 +174,8 @@ class CreateScenario(APIView):
                     dataframe=dataframe, scenarioid=scenarioid, session=session
                 )
                 logger.info(f"time taken to migrate {perf_counter() - start}")
-                '''# user_scenario_data = get_user_scenario_new(scenarioid=scenarioid, formid=formid, session=session)'''
+                '''# user_scenario_data = get_user_scenario_new(
+                    scenarioid=scenarioid, formid=formid, session=session)'''
                 logger.info(f"created scenario with id {scenarioid}")
                 data = {
                     "scenarioid": scenarioid,
@@ -137,16 +183,12 @@ class CreateScenario(APIView):
                     "scenario_decription": scenario_decription,
                     "scenario_status": status,
                 }
-                meta = {"code": HTTP_200_OK}
+                meta = {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.info(f"Exception in creating Scenario -> {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
     def put(self, req, format=None):
         try:
@@ -164,17 +206,12 @@ class CreateScenario(APIView):
             data = scenario_status_update(
                 userid=userid, scenarioid=scenarioid, formid=formid, status=status
             )
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
-            data = {}
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
     def delete(self, req, format=None):
         try:
@@ -193,20 +230,20 @@ class CreateScenario(APIView):
             data = scenario_data_status_update(
                 userid, scenarioid, formid, status, session=None, created_session=False
             )
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
             logger.info(f"Exception in creating hierarchy -> {e}")
-            data = {}
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class UpdateChangePrecentage(APIView):
+class UpdateChangePrecentage(BaseAPIView):
+    '''UpdateChangePrecentage _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         data = req.data["data"]
         datalist = data["datalist"]
@@ -219,21 +256,21 @@ class UpdateChangePrecentage(APIView):
                 data, filters, userid=userid, scenarioid=scenarioid
             )
             logger.info("Calculation done")
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
         except Exception as e:
-            logger.info(f"Exception in Update Change Precentage -> {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
-            data = None
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class SavesScenario(APIView):
+class SavesScenario(BaseAPIView):
+    '''SavesScenario _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         try:
             try:
@@ -245,20 +282,20 @@ class SavesScenario(APIView):
                     {"Key Error": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
                 )
             data = save_scenario(data=data)
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.info(f"Exception in saving Scenario -> {e}")
-            data = None
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class FetchFrom(APIView):
+class FetchFrom(BaseAPIView):
+    '''FetchFrom _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         data = None
         try:
@@ -266,19 +303,20 @@ class FetchFrom(APIView):
             orgid = req.data["data"]["organizationId"]
             logger.info(f"{userid=} {orgid=}")
             data = fetch_from(userid=userid, orgid=orgid)
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while fetching form names:  {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class FetchScenario(APIView):
+class FetchScenario(BaseAPIView):
+    '''FetchScenario _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         scenario_names = []
 
@@ -286,20 +324,20 @@ class FetchScenario(APIView):
             formid = req.data["data"]["formid"]
             userid = req.data["data"]["userid"]
             scenario_names = fetch_scenario(formid=formid, userid=userid)
-            data, meta = scenario_names, {"code": HTTP_200_OK}
+            data, meta = scenario_names, {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while fetching scenario names:  {e}")
-            data = None
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class GetData(APIView):
+class GetData(BaseAPIView):
+    '''GetData _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         data = {}
         try:
@@ -311,19 +349,20 @@ class GetData(APIView):
             logger.info(
                 f"time taken while fetching data for  {userid} is {perf_counter()-start} "
             )
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while Gettting Data:  {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class FilterColumn(APIView):
+class FilterColumn(BaseAPIView):
+    '''FilterColumn _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         data = {}
         try:
@@ -349,19 +388,20 @@ class FilterColumn(APIView):
             logger.info(
                 f"time taken while fetching data for  {userid} is {perf_counter()-start}"
             )
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while Filtering Column Values:  {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class GetScenario(APIView):
+class GetScenario(BaseAPIView):
+    '''GetScenario _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         data = {}
         try:
@@ -381,19 +421,20 @@ class GetScenario(APIView):
             logger.info(
                 f"time taken after fetching and for {userid} is {perf_counter()-start} "
             )
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
         except Exception as e:
-            logger.exception(f"exception while Getting Scenario:  {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class UpdateBudget(APIView):
+class UpdateBudget(BaseAPIView):
+    '''UpdateBudget _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         data = req.data["data"]
         amount_type = data["amount_type"]
@@ -406,21 +447,21 @@ class UpdateBudget(APIView):
                 date, amount_type, userid=userid, scenarioid=scenarioid
             )
             logger.info("Status update")
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
-            logger.info(f"Exception in Updating Budget -> {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
-            data = None
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
 
-class UpdateChangeValue(APIView):
+class UpdateChangeValue(BaseAPIView):
+    '''UpdateChangeValue _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def post(self, req, format=None):
         data = req.data["data"]
         datalist = data["datalist"]
@@ -433,20 +474,21 @@ class UpdateChangeValue(APIView):
                 data, filters, userid=userid, scenarioid=scenarioid
             )
             logger.info("Calculation done")
-            meta = {"code": HTTP_200_OK}
+            meta = {"status_code": HTTP_200_OK}
             logger.info(f"update percentage data len {data}")
         except Exception as e:
-            logger.info(f"Exception in Updating Change Value -> {e}")
-            meta = {
-                "error_message": str(e),
-                "error": True,
-                "code": HTTP_500_INTERNAL_SERVER_ERROR,
-            }
-            data = None
+            logger.exception(e)
+            raise e
         create_response(data, **meta)
-        return Response(constants.STATUS200, status=meta["code"])
+        return Response(constants.STATUS200, status=meta["status_code"])
 
-class TokenAPIView(APIView):
+
+class TokenAPIView(BaseAPIView):
+    '''TokenAPIView _summary_
+
+    Args:
+        BaseAPIView (_type_):
+    '''
     def get(self, req):
 
         try:
@@ -503,4 +545,3 @@ class TokenAPIView(APIView):
         logger.info(redirect_url)
 
         return HttpResponseRedirect(redirect_to=redirect_url)
-

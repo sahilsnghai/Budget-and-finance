@@ -1,3 +1,16 @@
+# Copyright © Lumenore Inc. All rights reserved.
+# This software is the confidential and proprietary information of
+# Lumenore Inc. "Confidential Information".
+# You shall * not disclose such Confidential Information and shall use it only in
+# accordance with the terms of the intellectual property agreement
+# you entered into with Lumenore Inc.
+# THIS SOFTWARE IS INTENDED STRICTLY FOR USE BY Lumenore Inc.
+# AND ITS PARENT AND/OR SUBSIDIARY COMPANIES. Lumenore
+# MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE SOFTWARE,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+# Lumenore SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY ANY PARTY AS A RESULT
+# OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
 
 """constants.py File"""
 
@@ -21,7 +34,8 @@ class Constants(metaclass=ConstantsMeta):
 
     def __init__(self):
 
-        self.time_zone = 'US/Eastern'  # timezone for date formatting
+        '''# timezone for date formatting'''
+        self.time_zone = 'US/Eastern'
         self.STATUS200 = {'version': {'pointer': "2.0", "name": "Finance app"},
                           "status": {"code": None},
                           "data": None, 'error': None}
@@ -63,19 +77,15 @@ class Constants(metaclass=ConstantsMeta):
         -------
 
         """
-        try:
+        json_filename = self.ROOT_DIR + "/configuration/configuration.json"
+        if not path.exists(json_filename):
+            json_filename = self.ROOT_DIR + "/configuration/askme-config-map-rsh"
+        with open(json_filename, "r") as f:
+            try:
+                if org == "parameters":
+                    return json.load(f)["parameters"][key]
+                else:
+                    return json.load(f)["dataSources"][org][key]
 
-            json_filename = self.ROOT_DIR + "/configuration/configuration.json"
-            if not path.exists(json_filename):
-                json_filename = self.ROOT_DIR + "/configuration/askme-config-map-rsh"
-            with open(json_filename, "r") as f:
-                try:
-                    if org == "parameters":
-                        return json.load(f)["parameters"][key]
-                    else:
-                        return json.load(f)["dataSources"][org][key]
-
-                except KeyError:
-                    return "local"
-        except Exception:
-            return "Local"
+            except KeyError:
+                return "local"

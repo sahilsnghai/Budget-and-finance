@@ -1,21 +1,44 @@
+# Copyright © Lumenore Inc. All rights reserved.
+# This software is the confidential and proprietary information of
+# Lumenore Inc. "Confidential Information".
+# You shall * not disclose such Confidential Information and shall use it only in
+# accordance with the terms of the intellectual property agreement
+# you entered into with Lumenore Inc.
+# THIS SOFTWARE IS INTENDED STRICTLY FOR USE BY Lumenore Inc.
+# AND ITS PARENT AND/OR SUBSIDIARY COMPANIES. Lumenore
+# MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE SOFTWARE,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+# Lumenore SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY ANY PARTY AS A RESULT
+# OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
+
+"""test_endpoint"""
+
 import pytest
 import secrets
 from rest_framework.test import APIClient
+from unittest.mock import patch
 from django.urls import reverse
 from .cases.cases import get_header, userid, scenarioid, formid, organizationId, email
 
-
 @pytest.fixture
 def client():
+    '''client
+
+    Returns:
+        _type_:
+    '''
     return APIClient()
 
 
-def test_form_status(client: APIClient):
+@patch("finance.views.scenario_status_update")
+def test_form_status(mock_status_update, client: APIClient):
     """Change Form Status
 
     Args:
         client (APIClient): for request and response
     """
+    mock_status_update.return_value = 1
     payload = {
         "data": {
             "userid": userid,
@@ -120,12 +143,16 @@ def crud_scenario(client):
     assert response.json()["data"] == 1
 
 
-def test_filter_form(client: APIClient):
+@patch('finance.views.fetch_from')
+@patch('finance.views.Session')
+def test_filter_form(mock_session,mock_filter_form, client: APIClient):
     """fetch filter form
 
     Args:
         client (APIClient): for request and response
     """
+    mock_session.return_value = None
+    mock_filter_form.return_value = [{}]
     headers = get_header(user_id=userid, org_id=organizationId, email=email)
     create_payload = {
             "data":{
@@ -143,12 +170,16 @@ def test_filter_form(client: APIClient):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_filter_scenario(client: APIClient):
+@patch('finance.views.fetch_scenario')
+@patch('finance.views.Session')
+def test_filter_scenario(mock_session,mock_filter_scenario, client: APIClient):
     """fetch filter form
 
     Args:
         client (APIClient): for request and response
     """
+    mock_session.return_value = None
+    mock_filter_scenario.return_value = [{}]
     headers = get_header(user_id=userid, org_id=organizationId, email=email)
     create_payload = {
             "data":{
@@ -168,12 +199,17 @@ def test_filter_scenario(client: APIClient):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_get_data(client: APIClient):
+
+@patch('finance.views.get_user_data')
+@patch('finance.views.Session')
+def test_get_data(mock_session, mock_user_data, client: APIClient):
     """fetch filter form
 
     Args:
         client (APIClient): for request and response
     """
+    mock_session.return_value = None
+    mock_user_data.return_value = [{}]
     headers = get_header(user_id=userid, org_id=organizationId, email=email)
     create_payload = {
             "data":{
@@ -191,12 +227,16 @@ def test_get_data(client: APIClient):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_filter_column(client: APIClient):
+@patch('finance.views.filter_column')
+@patch('finance.views.Session')
+def test_filter_column(mock_session, mock_filter_column, client: APIClient):
     """fetch filter form
 
     Args:
         client (APIClient): for request and response
     """
+    mock_session.return_value = None
+    mock_filter_column.return_value = [{}]
     headers = get_header(user_id=userid, org_id=organizationId, email=email)
     create_payload = {
             "data": {
@@ -217,12 +257,16 @@ def test_filter_column(client: APIClient):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_get_scenario(client: APIClient):
+@patch('finance.views.get_user_scenario_new')
+@patch('finance.views.Session')
+def test_get_scenario(mock_session, mock_get_user_scenario_new, client: APIClient):
     """fetch filter form
 
     Args:
         client (APIClient): for request and response
     """
+    mock_session.return_value = None
+    mock_get_user_scenario_new.return_value = [{}]
     headers = get_header(user_id=userid, org_id=organizationId, email=email)
     create_payload = {
             "data":{
@@ -241,12 +285,17 @@ def test_get_scenario(client: APIClient):
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-def test_update_scenario(client: APIClient):
+@patch('finance.views.update_scenario_percentage')
+@patch('finance.views.Session')
+def test_update_scenario(mock_session, mock_update_scenario_percentage, client: APIClient):
+
     """fetch filter form
 
     Args:
         client (APIClient): for request and response
     """
+    mock_session.return_value = None
+    mock_update_scenario_percentage.return_value = [{}]
     headers = get_header(user_id=userid, org_id=organizationId, email=email)
     create_payload = {
             "data": {
