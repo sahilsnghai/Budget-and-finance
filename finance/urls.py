@@ -43,5 +43,5 @@ urlpatterns = [
     path("update-scenario", UpdateChangePrecentage.as_view(), name="update-scenario"),
     path("update-value", UpdateChangeValue.as_view(), name="update-value"),
     path("update-actual", UpdateBudget.as_view(), name="update-actual"),
-    path('sso', TokenAPIView.as_view(), name='token_obtain_pair'),
+    path('sso', TokenAPIView.as_view(), name='sso'),
 ]

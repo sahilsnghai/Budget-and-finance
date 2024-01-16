@@ -975,9 +975,7 @@ def update_amount_type(
     return updated_data
 
 
-def get_secret(
-    orgid=None, session_obj=create_engine_and_session(database="ccplatform")
-):
+def get_secret(orgid=None):
     '''get_secret from jwt_settings
 
     Args:
@@ -989,9 +987,9 @@ def get_secret(
     '''
     SECRET_CLIENT, SECRET_CLIENTID = None, None
     try:
-        session = session_obj()
+        session_obj = create_engine_and_session(database="ccplatform")
         client = receive_query(
-            session.query(
+            session_obj().query(
                 JwtSettings.secret.label("SECRET_CLIENT"),
                 JwtSettings.client_id.label("SECRET_CLIENTID"),
             )
@@ -1005,11 +1003,11 @@ def get_secret(
         )
 
     except SQLAlchemyError as e:
-        session.rollback()
+        session_obj().rollback()
         logger.exception(f"Error could not perform SQL query: {e}")
     except Exception as e:
-        session.rollback()
+        session_obj().rollback()
         logger.exception(f"Error in SQL ORM: {e}")
     finally:
-        session.close()
+        session_obj().close()
     return SECRET_CLIENT, SECRET_CLIENTID

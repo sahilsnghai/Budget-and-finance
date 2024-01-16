@@ -14,7 +14,7 @@
 
 """tests cases"""
 
-from .token_encoder import get_header
+from .token_encoder import get_header, get_token
 
 userid=10910
 scenarioid=38

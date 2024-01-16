@@ -1,2 +1,2 @@
 # Coverage Django
-pytest --cov=lumenore_apps --cov-report xml
+pytest -v --cov=lumenore_apps --cov-report xml
