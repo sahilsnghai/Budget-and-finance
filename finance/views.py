@@ -516,6 +516,7 @@ class TokenAPIView(BaseAPIView):
                 constants.get_config("parameters", "identityUrl") + "/jwt/generate-jwt",
                 headers= {
                 'Content-Type': 'application/json',
+                "version": req.headers.get('version')
                 },
                 json={"data": payload},
             )
@@ -525,7 +526,7 @@ class TokenAPIView(BaseAPIView):
 
             response = post(
                 constants.get_config("parameters", "identityUrl") + "/jwt/sso-lumenore",
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                headers={"Content-Type": "application/x-www-form-urlencoded", "version": req.headers.get('version')},
                 data={
                     "jwt": token,
                     "return_to": constants.get_config("parameters", "financeAppRedirectUrl"),

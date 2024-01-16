@@ -125,5 +125,6 @@ class JwtSettings(Base):
     __tablename__ = 'jwt_settings'
     id = Column(Integer, primary_key=True)
     secret = Column(String)
+    isActive = Column(Boolean)
     client_id = Column(String)
     organizationId = Column(Integer)

@@ -993,7 +993,7 @@ def get_secret(orgid=None):
                 JwtSettings.secret.label("SECRET_CLIENT"),
                 JwtSettings.client_id.label("SECRET_CLIENTID"),
             )
-            .filter(JwtSettings.organizationId == orgid)
+            .filter(JwtSettings.organizationId == orgid, JwtSettings.isActive == True)
             .all()
         )[0]
         logger.info(f"{client=}")
