@@ -54,11 +54,12 @@ def create_response(data, status_code=HTTP_200_OK, error=False, **kwags):
         constants.STATUS200.pop("error_message", None)
     constants.STATUS200["status"]["code"] = status_code
     constants.STATUS200["data"] = data
+    logger.info(f" {constants.engine.dispose()} ")
     logger.info(f" {constants.engine.pool.status()} ")
     logger.info("-" * 100)
 
 
-def format_df(df, **kwargs):
+async def format_df(df, **kwargs):
     '''format_df to format data
 
     Args:
@@ -69,20 +70,12 @@ def format_df(df, **kwargs):
     '''
     logger.info(f"Before renaming: {df.columns}")
     df = df.rename(columns=COLUMNS)
-    if common_columns := set(["data_id", "base value"]).intersection(df.columns):
-        logger.info(common_columns)
-        df = df.drop(columns=common_columns)
-    logger.info(f"updated columns :\n{df.columns}")
     df["amount_type"] = df["amount_type"].replace(
         {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0}
     )
     logger.info(f"{kwargs=}")
     df["created_by"] = df["modified_by"] = kwargs.get("userid", None)
-    if formid := kwargs.get("formid", None):
-        df["fn_form_id"] = formid
-    elif scenarioid := kwargs.get("scenarioid", None):
-        logger.info(f"working on {scenarioid}")
-        df["fn_scenario_id"] = scenarioid
+    df["fn_form_id"] = kwargs.get("formid", None)
     logger.info(f"{len(df)}")
     return df
 
@@ -96,40 +89,33 @@ def create_filter(datalist):
     Returns:
         zip object: {filters: values}
     '''
+    row = datalist
     logger.info("Creating filters.")
-    filters_list = []
-    changes_list = []
     change_value = {}
 
-    for row in datalist:
-        filters = {}
-        if row.get("changePrecentage") is not None:
-            logger.info(f"{row['changePrecentage']=}")
-            change_value = {
-                "changePrecentage": row.get("changePrecentage")
-                if row.get("changePrecentage") in [0, -100]
-                else (row["changePrecentage"] / 100) + 1
-            }
-            logger.info(f"{change_value=}")
-        elif row.get("changeValue") is not None:
-            change_value = {
-                "changeValue": row["changeValue"],
-                "date": row["date"],
-                "dateformat": row.get("dateformat", "%Y%m"),
-            }
+    filters = {}
+    if row.get("changePrecentage") is not None:
+        logger.info(f"{row['changePrecentage']=}")
+        change_value = {
+            "changePrecentage": row.get("changePrecentage")
+            if row.get("changePrecentage") in [0, -100]
+            else (row["changePrecentage"] / 100) + 1
+        }
+        logger.info(f"{change_value=}")
+    elif row.get("changeValue") is not None:
+        change_value = {
+            "changeValue": row["changeValue"],
+            "date": row["date"],
+            "dateformat": row.get("dateformat", "%Y%m"),
+        }
 
-        if row.get("amount_type") is not None:
-            filters.update({"amount_type": row["amount_type"]})
+    if row.get("amount_type") is not None:
+        filters.update({"amount_type": row["amount_type"]})
 
-        row["columns"] = [COLUMNS[column] for column in row["columns"]]
+    row["columns"] = [COLUMNS[column] for column in row["columns"]]
 
-        filters.update(zip(row["columns"], row["rows"]))
+    filters.update(zip(row["columns"], row["rows"]))
 
-        filters_list.append(filters)
-        changes_list.append(change_value)
-
-    logger.info(filters_list)
-    logger.info(changes_list)
     logger.info("Filters created.")
 
-    return zip(filters_list, changes_list)
+    return (filters, change_value)

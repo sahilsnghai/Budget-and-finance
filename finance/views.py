@@ -18,6 +18,7 @@ from time import perf_counter
 from lumenore_apps import Constants, set_up_logging
 from rest_framework import response, views, exceptions
 from requests import post
+from concurrent.futures import ThreadPoolExecutor, wait, as_completed
 from .utils import create_response, format_df, create_filter, COLUMNS
 from django.http import HttpResponseRedirect
 from rest_framework.status import (
@@ -43,9 +44,11 @@ from .database.get_data import (
     update_change_value,
     update_amount_type,
     get_secret,
+    create_async_session,
     Session,
 )
 import pandas as pd
+import asyncio
 
 
 constants = Constants()
@@ -85,7 +88,7 @@ class CreateHierarchy(BaseAPIView):
     '''
     def post(self, req, format=None):
         try:
-            file = req.FILES["file"]
+            files = req.FILES.getlist("file")
             userid = req.POST["userid"]
             orgid = req.POST["organizationId"]
         except Exception as e:
@@ -96,9 +99,12 @@ class CreateHierarchy(BaseAPIView):
         data = None
         try:
             start = perf_counter()
-            data = self.save_matrix(
-                df=pd.read_excel(file), userid=userid, orgid=orgid, filename=file.name
-            )
+            with ThreadPoolExecutor(max_workers=len(files)) as executor:
+                futures = [executor.submit(asyncio.run, self.save_matrix(
+                df=pd.read_excel(file), userid=userid, orgid=orgid, filename=file.name))
+                for file in files]
+            wait(futures)
+            data = [future.result() for future in futures]
             logger.info(f"time by hierarchy {perf_counter() - start}")
             meta = {"status_code": HTTP_200_OK}
         except Exception as e:
@@ -114,22 +120,24 @@ class CreateHierarchy(BaseAPIView):
         return CreateScenario().delete(req=req)
 
     @staticmethod
-    def save_matrix(df, filename, **kwargs):
+    async def save_matrix(df, filename, **kwargs):
         try:
-            if list(df.columns.to_list()) != list(COLUMNS.keys()):
-                raise KeyError("Invalid Column Names.")
-            formid = create_form(filename, kwargs.get("userid"), kwargs.get("orgid"))
-            if formid is not None:
-                logger.info(f"created form wih id -> {formid}")
-                df = format_df(df, formid=formid, userid=kwargs.get("userid"))
-                create_user_data(df, formid)
-            else:
-                logger.info(f"Could not create form wih id -> {formid}")
+            async_session = create_async_session()
+            async with async_session() as session:
+                if list(df.columns.to_list()) != list(COLUMNS.keys()):
+                    raise KeyError("Invalid Column Names.")
+                formid = await create_form(filename, kwargs.get("userid"), kwargs.get("orgid"), session=session)
+                if formid is not None:
+                    logger.info(f"created form wih id -> {formid}")
+                    df = await format_df(df, formid=formid, userid=kwargs.get("userid"))
+                    await create_user_data(df, formid, session=session)
+                else:
+                    logger.info(f"Could not create form wih id -> {formid}")
 
         except Exception as e:
             logger.exception(e)
             raise e
-        return {"formid": formid}
+        return {"formid": formid, "filename": filename.split('.')[0]}
 
 
 class CreateScenario(BaseAPIView):
@@ -251,10 +259,14 @@ class UpdateChangePrecentage(BaseAPIView):
         scenarioid = data["scenarioid"]
 
         try:
-            filters = create_filter(datalist=datalist)
-            data = update_scenario_percentage(
-                data, filters, userid=userid, scenarioid=scenarioid
-            )
+            with ThreadPoolExecutor(max_workers=len(datalist)) as executor:
+                futures = [executor.submit(update_scenario_percentage,
+                            data, create_filter(row), userid=userid, scenarioid=scenarioid
+                            ) for row in datalist]
+
+            data = []
+            for future in as_completed(futures):
+                data.extend(future.result())
             logger.info("Calculation done")
             meta = {"status_code": HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
@@ -469,13 +481,16 @@ class UpdateChangeValue(BaseAPIView):
         scenarioid = data["scenarioid"]
 
         try:
-            filters = create_filter(datalist=datalist)
-            data = update_change_value(
-                data, filters, userid=userid, scenarioid=scenarioid
-            )
+            with ThreadPoolExecutor(max_workers=len(datalist)) as executor:
+                futures = [executor.submit(update_change_value,
+                            data, create_filter(row), userid=userid, scenarioid=scenarioid
+                            ) for row in datalist]
+            data = 0
+            for future in as_completed(futures):
+                data += future.result()
             logger.info("Calculation done")
             meta = {"status_code": HTTP_200_OK}
-            logger.info(f"update percentage data len {data}")
+            logger.info(f"update value row data  {data}")
         except Exception as e:
             logger.exception(e)
             raise e

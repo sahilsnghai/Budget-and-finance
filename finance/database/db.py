@@ -16,6 +16,7 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from lumenore_apps.constants import Constants
 from urllib.parse import quote_plus
 
@@ -36,7 +37,7 @@ def create_engine_and_session(database="financeApp"):
         f"""mysql+mysqlconnector://{conn_info["user"]}
         :{quote_plus(conn_info["password"])}@{conn_info["host"]}:
         {conn_info["port"]}/{conn_info["database"]}""",
-        pool_size=1,
+        pool_size=10,
     )
 
     session = sessionmaker(bind=engine)
@@ -44,3 +45,25 @@ def create_engine_and_session(database="financeApp"):
     constants.engine = engine
     constants.session = session
     return session
+
+def create_async_session(database: str ="financeApp") -> AsyncSession:
+    '''create_async_session _summary_
+
+    Args:
+        database_url (str): _description_
+
+    Returns:
+        AsyncSession: _description_
+
+    Yields:
+        Iterator[AsyncSession]: _description_
+    '''
+    conn_info = constants.get_conn_info(database)
+    engine = create_async_engine(
+        f"""mysql+aiomysql://{conn_info["user"]}:{quote_plus(conn_info["password"])}@{conn_info["host"]}:
+        {conn_info["port"]}/{conn_info["database"]}""", pool_size=10)
+
+    async_session = sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
+    return async_session
