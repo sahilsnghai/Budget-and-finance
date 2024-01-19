@@ -176,7 +176,11 @@ class CreateScenario(BaseAPIView):
                     f"time taken while saving scenario meta and fetching user data {perf_counter() - start}"
                 )
 
-                logger.info(f"{dataframe[0]}")
+                try:
+                    logger.info(f"{dataframe[0]}")
+                except IndexError as e:
+                    logger.info("got Indix error check log 211 get_data userid and formid should match")
+                    raise IndexError("Couldn't able to fetch data. Please refresh")
 
                 create_user_data_scenario(
                     dataframe=dataframe, scenarioid=scenarioid, session=session

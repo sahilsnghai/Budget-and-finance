@@ -288,7 +288,6 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
                 FnUserData.project_name.label("Project Name"),
                 FnUserData.customer_name.label("Customer Name"),
                 FnUserData.amount.label("Amount"),
-                FnUserData.customer_name.label("Customer Name"),
                 case(
                     (FnUserData.amount_type == 1, "Actual"),
                     (FnUserData.amount_type == 0, "Budget"),
@@ -809,7 +808,7 @@ def save_scenario(data, session=None, created_session=False):
             .update(update_values, synchronize_session="fetch")
         )
         session.commit()
-        logger.info(f"{str(stmt)}")
+        logger.info(f"{stmt}")
         logger.info("Scenario Saved")
         logger.info(f"saving took time {perf_counter() - start}")
     except SQLAlchemyError as e:

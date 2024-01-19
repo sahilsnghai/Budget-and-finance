@@ -29,7 +29,6 @@ from .cases.cases import (
     email,
     get_token,
 )
-from finance.database.get_data import get_secret
 
 
 @pytest.fixture
@@ -316,14 +315,13 @@ def test_update_scenario(
     assert response.status_code == 200
     assert len(body["data"]) != 0
 
-
-@patch("finance.database.get_data.receive_query")
 @patch("finance.database.get_data.create_engine_and_session")
+@patch("finance.database.get_data.receive_query")
 @patch("finance.views.post")
 def test_get_secret(
     mock_token_post,
-    mock_session_obj,
     mock_receive_query,
+    mock_create_session,
     client: APIClient,
 ):
     """Change Form Status
@@ -341,7 +339,8 @@ def test_get_secret(
     mock_token_post.return_value = mock_response
 
     mock_session = MagicMock()
-    mock_session.return_value.query.return_value = mock_session
+    mock_session.return_value.query.return_value.filter_retrun_value.all_return_value = 1
+    mock_create_session.return_value = mock_session
 
 
     mock_receive_query.return_value =[ {"SECRET_CLIENT": "fRNfqXi/*-!G_tDsvz", "SECRET_CLIENTID": "salesforcedemo"}]
@@ -350,3 +349,153 @@ def test_get_secret(
     assert response.status_code == 302
     query_params = parse_qs(urlparse(response.url).query)
     assert query_params["token"][0] == token
+
+@patch("finance.database.get_data.receive_query")
+@patch("finance.database.get_data.Session")
+def test_update_value(mock_session, mock_receive_query,  client: APIClient):
+    '''test_update_value _summary_
+
+    Args:
+        mock_session (_type_): _description_
+        mock_update_value (_type_): _description_
+        client (APIClient): _description_
+    '''
+    mock_receive_query.return_value = [{"change_value":100.0}]
+
+    mock_session_instance = MagicMock()
+    mock_session_instance.query.return_value.filter.return_value.update.return_value = 4
+    mock_session.return_value = mock_session_instance
+
+    headers = get_header(user_id=userid, org_id=organizationId, email=email)
+    create_payload = {
+    "data": {
+        "userid": userid,
+        "formid": formid,
+        "datalist": [
+                    {
+                        "columns": [
+                            "Account Type",
+                            "Account SubType",
+                            "Project Name",
+                            "Customer Name"
+                        ],
+                        "rows": [
+                            "Revenue",
+                            "Base Revenue",
+                            "Delta",
+                            "Customer 2"
+                        ],
+                        "changeValue": "100000",
+                        "amount_type": 0,
+                        "date": 202307
+                    }
+                ],
+                "scenarioid": scenarioid,
+                "date": 2023
+            }
+        }
+
+    response = client.post(
+        reverse("update-value"),
+        headers=headers,
+        data=create_payload,
+    )
+    body = response.json()
+    assert response.status_code == 200
+    assert body["data"] == 4
+
+@patch("finance.database.get_data.Session")
+def test_update_amounttype(mock_session, client: APIClient):
+    '''test_update_value _summary_
+
+    Args:
+        mock_session (_type_): _description_
+        mock_update_value (_type_): _description_
+        client (APIClient): _description_
+    '''
+
+    mock_session_instance = MagicMock()
+    mock_session_instance.query.return_value.filter.return_value.update.return_value = 1
+    mock_session.return_value = mock_session_instance
+
+    headers = get_header(user_id=userid, org_id=organizationId, email=email)
+    create_payload = {
+            "data": {
+                "userid": userid,
+                "scenarioid": scenarioid,
+                "date": 202307,
+                "amount_type": 1
+            }
+        }
+    response = client.post(
+        reverse("update-actual"),
+        headers=headers,
+        data=create_payload,
+    )
+    body = response.json()
+    assert response.status_code == 200
+    assert body["data"] == 1
+
+@patch("finance.database.get_data.Session")
+def test_delete_scnario(mock_session, client: APIClient):
+    '''test_update_value _summary_
+
+    Args:
+        mock_session (_type_): _description_
+        mock_update_value (_type_): _description_
+        client (APIClient): _description_
+    '''
+
+    mock_session_instance = MagicMock()
+    mock_session_instance.query.return_value.filter.return_value.update.side_effect = [1, 2]
+    mock_session.return_value = mock_session_instance
+
+    headers = get_header(user_id=userid, org_id=organizationId, email=email)
+    create_payload = {
+            "data": {
+                "userid": userid,
+                "scenarioid": scenarioid,
+                "formid": formid,
+                "status": True
+            }
+        }
+    response = client.delete(
+        reverse("create-scenario"),
+        headers=headers,
+        data=create_payload,
+    )
+    body = response.json()
+    assert response.status_code == 200
+    assert body["data"] == 1
+
+
+@patch("finance.database.get_data.Session")
+def test_save_scenario(mock_session, client: APIClient):
+    '''test_update_value _summary_
+
+    Args:
+        mock_session (_type_): _description_
+        mock_update_value (_type_): _description_
+        client (APIClient): _description_
+    '''
+
+    mock_session_instance = MagicMock()
+    mock_session_instance.query.return_value.filter.return_value.update.return_value = 1
+    mock_session.return_value = mock_session_instance
+
+    headers = get_header(user_id=userid, org_id=organizationId, email=email)
+    create_payload = {
+            "data": {
+                "scenarioid": scenarioid,
+                "formid": formid,
+                "userid": userid
+            }
+        }
+    response = client.post(
+        reverse("save-scenario"),
+        headers=headers,
+        data=create_payload,
+    )
+    body = response.json()
+    assert response.status_code == 200
+    assert body["data"] == 1
