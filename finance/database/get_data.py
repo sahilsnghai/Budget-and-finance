@@ -307,12 +307,6 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
             )
             .all()
         )
-        if karwgs.get("migrate"):
-            logger.info("Start migrations")
-            Thread(target=create_user_data_scenario, name=f"Creating New Scenario {karwgs.get('scenarioid')}",
-                        args=(user_data, karwgs.get("scenarioid"), session)
-                    )
-
         logger.info(
             f"got user data for  {len(user_data)} time took {perf_counter() - start}"
         )

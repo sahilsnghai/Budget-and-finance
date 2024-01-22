@@ -186,9 +186,9 @@ class CreateScenario(BaseAPIView):
                         logger.info("got Indix error check log 211 get_data userid and formid should match")
                         raise IndexError("Couldn't able to fetch data. Please refresh")
 
-                    # create_user_data_scenario(
-                    #     dataframe=dataframe, scenarioid=scenarioid, session=session
-                    # )
+                    create_user_data_scenario(
+                        dataframe=dataframe, scenarioid=scenarioid, session=session
+                    )
                     logger.info(f"time taken to migrate {perf_counter() - start}")
                     '''# user_scenario_data = get_user_scenario_new(
                         scenarioid=scenarioid, formid=formid, session=session)'''
