@@ -56,7 +56,7 @@ def create_response(data, status_code=HTTP_200_OK, error=False, **kwags):
     constants.STATUS200["data"] = data
     logger.info(f" {constants.engine.dispose()} ")
     logger.info(f" {constants.engine.pool.status()} ")
-    logger.info("-" * 100)
+    logger.info(f"{'':->100}")
 
 
 async def format_df(df, **kwargs):

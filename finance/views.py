@@ -107,6 +107,9 @@ class CreateHierarchy(BaseAPIView):
             data = [future.result() for future in futures]
             logger.info(f"time by hierarchy {perf_counter() - start}")
             meta = {"status_code": HTTP_200_OK}
+        except (ValueError, KeyError) as e:
+            logger.exception(e)
+            raise RuntimeError("Error in request")
         except Exception as e:
             logger.exception(e)
             raise e
@@ -125,7 +128,7 @@ class CreateHierarchy(BaseAPIView):
             async_session = create_async_session()
             async with async_session() as session:
                 if list(df.columns.to_list()) != list(COLUMNS.keys()):
-                    raise KeyError("Invalid Column Names.")
+                    raise RuntimeError("Invalid Column Names.")
                 formid = await create_form(filename, kwargs.get("userid"), kwargs.get("orgid"), session=session)
                 if formid is not None:
                     logger.info(f"created form wih id -> {formid}")
@@ -279,9 +282,11 @@ class UpdateChangePrecentage(BaseAPIView):
             logger.info("Calculation done")
             meta = {"status_code": HTTP_200_OK}
             logger.info(f"update percentage data len {len(data)}")
+        except (ValueError, KeyError) as e:
+            logger.exception(e)
+            raise IndexError("Error in request")
         except Exception as e:
             logger.exception(e)
-            raise e
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["status_code"])
 
@@ -500,6 +505,9 @@ class UpdateChangeValue(BaseAPIView):
             logger.info("Calculation done")
             meta = {"status_code": HTTP_200_OK}
             logger.info(f"update value row data  {data}")
+        except ValueError as e:
+            logger.exception(e)
+            raise RuntimeError("Incorrect request")
         except Exception as e:
             logger.exception(e)
             raise e

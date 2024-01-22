@@ -57,7 +57,7 @@ def middleware(get_response):
         Returns:
             _type_:
         '''
-        logger.info(f"{'-'*100} \n{req.build_absolute_uri()} \n")
+        print(f"{'':->50} \n\n{req.build_absolute_uri()} \n\n")
         validity = True if req.path in EXCLUDED_PATHS else process_req(req=req)
         logger.info(f"{validity=}")
 
