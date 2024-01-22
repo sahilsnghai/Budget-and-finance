@@ -16,7 +16,7 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from lumenore_apps.constants import Constants
 from urllib.parse import quote_plus
 
@@ -63,7 +63,7 @@ def create_async_session(database: str ="financeApp") -> AsyncSession:
         f"""mysql+aiomysql://{conn_info["user"]}:{quote_plus(conn_info["password"])}@{conn_info["host"]}:
         {conn_info["port"]}/{conn_info["database"]}""", pool_size=10)
 
-    async_session = sessionmaker(
+    async_session = async_sessionmaker(
         bind=engine, class_=AsyncSession, expire_on_commit=False
     )
     return async_session

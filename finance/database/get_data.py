@@ -18,6 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_, case, func, literal, desc, update
 from lumenore_apps.main_logger import set_up_logging
 from time import perf_counter
+from threading import Thread
 from .db import create_engine_and_session, create_async_session
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData, JwtSettings
 
@@ -139,7 +140,9 @@ async def create_user_data(df, formid, session):
         df = df.dropna()
         data = df.to_dict(orient="records")
 
-        await session.bulk_insert_mappings(FnUserData, data)
+        ses = Session()
+
+        await session.run_sync(lambda ses: ses.bulk_insert_mappings(FnUserData, data))
         await session.commit()
 
         logger.info(
@@ -152,6 +155,7 @@ async def create_user_data(df, formid, session):
         await session.rollback()
         logger.exception(f"Error in SQL ORM: {e}")
     finally:
+        ses.close()
         await session.close()
 
 
@@ -295,7 +299,7 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
                 ).label("Amount Type"),
             ]
 
-        user_data = (
+        user_data = receive_query(
             session.query(*common_columns)
             .filter(
                 FnUserData.fn_form_id == formid,
@@ -303,9 +307,12 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
             )
             .all()
         )
+        if karwgs.get("migrate"):
+            logger.info("Start migrations")
+            Thread(target=create_user_data_scenario, name=f"Creating New Scenario {karwgs.get('scenarioid')}",
+                        args=(user_data, karwgs.get("scenarioid"), session)
+                    )
 
-        user_data = receive_query(user_data)
-        logger.info(f"{len(user_data)}")
         logger.info(
             f"got user data for  {len(user_data)} time took {perf_counter() - start}"
         )
@@ -315,6 +322,7 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
     except Exception as e:
         session.rollback()
         logger.exception(f"Error in SQL ORM: {e}")
+        raise ValueError("Error while migrating.")
     finally:
         created_session and session.close()
     return user_data
@@ -409,6 +417,7 @@ def create_scenario(
         logger.info("creating form")
 
         if session is None:
+            logger.info("Creating Session for new scenario")
             session = Session()
             created_session = True
 

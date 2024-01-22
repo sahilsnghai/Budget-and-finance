@@ -159,46 +159,51 @@ class CreateScenario(BaseAPIView):
                 {"KeyError": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
             )
         data = None
-        try:
-            with Session() as session:
-                start = perf_counter()
-                scenarioid, status = create_scenario(
-                    scenario_name, scenario_decription, formid, userid, session
-                )
-                dataframe = get_user_data(
-                    formid=formid,
-                    userid=userid,
-                    scenarioid=scenarioid,
-                    migrate=True,
-                    session=session,
-                )
-                logger.info(
-                    f"time taken while saving scenario meta and fetching user data {perf_counter() - start}"
-                )
+        with Session() as session:
+            try:
+                    start = perf_counter()
+                    scenarioid, status = create_scenario(
+                        scenario_name, scenario_decription, formid, userid, session
+                    )
 
-                try:
-                    logger.info(f"{dataframe[0]}")
-                except IndexError as e:
-                    logger.info("got Indix error check log 211 get_data userid and formid should match")
-                    raise IndexError("Couldn't able to fetch data. Please refresh")
+                    if scenarioid is None:
+                        raise ValueError(f"Could not able to create {scenario_name}.")
 
-                create_user_data_scenario(
-                    dataframe=dataframe, scenarioid=scenarioid, session=session
-                )
-                logger.info(f"time taken to migrate {perf_counter() - start}")
-                '''# user_scenario_data = get_user_scenario_new(
-                    scenarioid=scenarioid, formid=formid, session=session)'''
-                logger.info(f"created scenario with id {scenarioid}")
-                data = {
-                    "scenarioid": scenarioid,
-                    "scenario_name": scenario_name,
-                    "scenario_decription": scenario_decription,
-                    "scenario_status": status,
-                }
-                meta = {"status_code": HTTP_200_OK}
-        except Exception as e:
-            logger.exception(e)
-            raise e
+                    dataframe = get_user_data(
+                        formid=formid,
+                        userid=userid,
+                        scenarioid=scenarioid,
+                        migrate=True,
+                        session=session,
+                    )
+                    logger.info(
+                        f"time taken while saving scenario meta and fetching user data {perf_counter() - start}"
+                    )
+
+                    try:
+                        logger.info(f"{dataframe[0]}")
+                    except IndexError as e:
+                        logger.info("got Indix error check log 211 get_data userid and formid should match")
+                        raise IndexError("Couldn't able to fetch data. Please refresh")
+
+                    # create_user_data_scenario(
+                    #     dataframe=dataframe, scenarioid=scenarioid, session=session
+                    # )
+                    logger.info(f"time taken to migrate {perf_counter() - start}")
+                    '''# user_scenario_data = get_user_scenario_new(
+                        scenarioid=scenarioid, formid=formid, session=session)'''
+                    logger.info(f"created scenario with id {scenarioid}")
+                    data = {
+                        "scenarioid": scenarioid,
+                        "scenario_name": scenario_name,
+                        "scenario_decription": scenario_decription,
+                        "scenario_status": status,
+                    }
+                    meta = {"status_code": HTTP_200_OK}
+            except Exception as e:
+                session.rollback()
+                logger.exception(e)
+                raise e
         create_response(data, **meta)
         return Response(constants.STATUS200, status=meta["status_code"])
 
