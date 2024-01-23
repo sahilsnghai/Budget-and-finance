@@ -175,7 +175,7 @@ def fetch_from(userid, orgid):
         with Session() as session:
             form_names = receive_query(
                 session.query(
-                    FnForm.form_name.label("form_name"),
+                    FnForm.form_name.label("filename"),
                     FnForm.fn_form_id.label("formid"),
                 )
                 .filter(
