@@ -1,2 +1,3 @@
 # Coverage Django
-pytest -v --cov=lumenore_apps --cov-report xml
+coverage run -m pytest finance/tests/
+coverage xml
