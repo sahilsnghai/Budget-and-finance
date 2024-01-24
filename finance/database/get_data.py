@@ -599,16 +599,18 @@ def update_scenario_percentage(data, filters_list, userid, scenarioid):
                                 ) +
                                 func.sum(
                                     case((FnScenarioData.amount_type == 0,
-                                            FnScenarioData.amount)), else_=0.0)
+                                            FnScenarioData.amount), else_=0.0))
                                 ) * update['changePrecentage'] -
                                 func.sum(
                                     case((FnScenarioData.amount_type == 1,
-                                            (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1)))),
-                                        else_=0.0)
+                                            (FnScenarioData.amount * (FnScenarioData.change_value / 100 + 1))),
+                                        else_=0.0))
                                 ) /
                                 func.sum(
-                                    case((FnScenarioData.amount_type == 0,
-                                            FnScenarioData.amount)), else_=0.0)
+                                    case(
+                                        (FnScenarioData.amount_type == 0,
+                                            FnScenarioData.amount),
+                                            else_=0.0))
                                 )
 
                                 * 100)).label("change_value")
