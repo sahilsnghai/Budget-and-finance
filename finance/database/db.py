@@ -14,8 +14,8 @@
 
 """db.py"""
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, engine as Engine
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from lumenore_apps.constants import Constants
 from urllib.parse import quote_plus
@@ -34,13 +34,18 @@ def create_engine_and_session(database="financeApp"):
     """
     conn_info = constants.get_conn_info(database)
     engine = create_engine(
-        f"""mysql+mysqlconnector://{conn_info["user"]}
-        :{quote_plus(conn_info["password"])}@{conn_info["host"]}:
-        {conn_info["port"]}/{conn_info["database"]}""",
+       url=Engine.URL.create(
+                    drivername='mysql+mysqlconnector',
+                    username=conn_info["user"],
+                    password=conn_info["password"],
+                    host=conn_info["host"],
+                    port=conn_info["port"],
+                    database=conn_info["database"]
+        ),
         pool_size=10,
     )
 
-    session = sessionmaker(bind=engine)
+    session = scoped_session(sessionmaker(bind=engine))
 
     constants.engine = engine
     constants.session = session

@@ -16,11 +16,8 @@
 
 
 from pathlib import Path
-from .constants import Constants
 import os
-constant = Constants()
 
-financeApp = constant.get_conn_info('financeApp')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -124,15 +121,6 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3"
-    },
-    "financeApp":{
-        "ENGINE": financeApp.get("driver"),
-        "NAME": financeApp.get("database"),
-        "USER": financeApp.get("user"),
-        "HOST": financeApp.get("host"),
-        "PORT": financeApp.get("port"),
-        "PASSWORD": financeApp.get("password")
-
     }
 }
 

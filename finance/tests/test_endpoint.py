@@ -68,18 +68,33 @@ def test_form_status(mock_session, client: APIClient):
     assert response.json()["data"] == 1
 
 
-def crud_scenario(client):
-    """
-    test_create_save_scenario
+@patch("finance.database.get_data.FnScenario")
+@patch("finance.database.get_data.fetch_scenario")
+@patch("finance.views.get_user_data")
+@patch("finance.views.Session")
+def test_crud_scenario(mock_session, mock_get_user_data,mock_fetch_scenario,mock_fn_scenario,client: APIClient):
+    '''test_crud_scenario _summary_
 
     Args:
-        client (APIClient): for request and response
-    """
+        mock_session (Mock): Mock()
+        mock_get_user_data (Mock): Mock()
+        mock_fetch_scenario (Mock): Mock()
+        mock_fn_scenario (Mock): Mock()
+        client (APIClient): APIClient
+    '''
+    mock_session_instance = MagicMock()
+    mock_session_instance.query.return_value.filter.return_value.update.return_value = None
+    mock_session.side_effect = [mock_session_instance,mock_session_instance]
+    mock_fetch_scenario.return_value= [{"scenario_name":"xyz"}]
+    mock_get_user_data.return_value = [{},{},{}]
+    mock_scenario_instance = mock_fn_scenario.return_value
+    mock_scenario_instance.fn_scenario_id = 1234
+    mock_scenario_instance.is_active = True
 
     headers = get_header(user_id=userid, org_id=organizationId, email=email)
     create_payload = {
         "data": {
-            "scenario_name": f"scenario_name{secrets.token_urlsafe(7)[:7]}",
+            "scenario_name": "Test",
             "scenario_decription": "scenario_decription",
             "formid": formid,
             "userid": userid,
@@ -90,10 +105,10 @@ def crud_scenario(client):
         headers=headers,
         data=create_payload,
     )
+
     body = response.json()
 
     assert response.status_code == 200
-    assert isinstance(type(body["data"]), dict)
     assert body["data"]["scenario_status"] == True
 
     scenarioid = body["data"]["scenarioid"]
@@ -114,12 +129,11 @@ def crud_scenario(client):
     )
 
     assert response.status_code == 200
-    assert response.json()["data"] == 1
 
     create_payload = {
         "data": {
-            "scenario_name": "TEST",
-            "scenario_decription": "TEST",
+            "scenario_name": "xyz",
+            "scenario_decription": "scenario_decription",
             "formid": formid,
             "userid": userid,
         }
@@ -129,9 +143,8 @@ def crud_scenario(client):
         headers=headers,
         data=create_payload,
     )
-
     assert response.status_code == 500
-    assert response.json()["error_message"] == "Scenario already exits"
+    assert response.json()["error_message"] == "Scenario already exists"
 
     delete_payload = {
         "data": {
@@ -146,12 +159,24 @@ def crud_scenario(client):
         headers=headers,
         data=delete_payload,
     )
-    body = response.json()
-
-    print(body)
 
     assert response.status_code == 200
-    assert response.json()["data"] == 1
+
+    put_payload = {
+        "data": {
+            "userid": userid,
+            "scenarioid": scenarioid,
+            "status": True,
+            "formid": formid,
+        }
+    }
+    response = client.put(
+        reverse('create-scenario'),
+        headers=headers,
+        data=put_payload,
+    )
+
+    assert response.status_code == 200
 
 
 @patch("finance.views.fetch_from")
@@ -350,6 +375,15 @@ def test_get_secret(
     query_params = parse_qs(urlparse(response.url).query)
     assert query_params["token"][0] == token
 
+    params = {"organizationId": 1111, "email": "ssjain@lumenore.com"}
+    response = client.get(reverse("sso"), params)
+    assert response.status_code == 302
+
+    params = {"organizationId": 1111}
+    response = client.get(reverse("sso"), params)
+
+    assert response.status_code == 400
+
 @patch("finance.database.get_data.receive_query")
 @patch("finance.database.get_data.Session")
 def test_update_value(mock_session, mock_receive_query,  client: APIClient):
@@ -403,6 +437,44 @@ def test_update_value(mock_session, mock_receive_query,  client: APIClient):
     body = response.json()
     assert response.status_code == 200
     assert body["data"] == 4
+
+    create_payload = {
+    "data": {
+        "datalist": [
+                    {
+                        "columns": [
+                            "Account Type",
+                            "Account SubType",
+                            "Project Name",
+                            "Customer Name"
+                        ],
+                        "rows": [
+                            "Revenue",
+                            "Base Revenue",
+                            "Delta",
+                            "Customer 2"
+                        ],
+                        "changeValue": "100000",
+                        "amount_type": 0,
+                        "date": 202307
+                    }
+                ],
+                "scenarioid": scenarioid,
+                "date": 2023
+            }
+        }
+
+    response = client.post(
+        reverse("update-value"),
+        headers=headers,
+        data=create_payload,
+    )
+    body = response.json()
+    assert response.status_code == 500
+    print(body)
+    assert body["error"] == True
+    assert body["error_message"] == "'userid'"
+
 
 @patch("finance.database.get_data.Session")
 def test_update_amounttype(mock_session, client: APIClient):
