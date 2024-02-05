@@ -44,7 +44,7 @@ from .database.get_data import (
     update_change_value,
     update_amount_type,
     get_secret,
-    create_async_session,
+    create_engine_and_session,
     Session,
 )
 import pandas as pd
@@ -125,8 +125,8 @@ class CreateHierarchy(BaseAPIView):
     @staticmethod
     async def save_matrix(df, filename, **kwargs):
         try:
-            async_session = create_async_session()
-            async with async_session() as session:
+            async_session = create_engine_and_session()
+            with async_session() as session:
                 if list(df.columns.to_list()) != list(COLUMNS.keys()):
                     raise RuntimeError("Invalid Column Names.")
                 formid = await create_form(filename, kwargs.get("userid"), kwargs.get("orgid"), session=session)

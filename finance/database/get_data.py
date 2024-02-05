@@ -90,11 +90,11 @@ async def create_form(form_name, lum_user_id, lum_org_id, session):
         formid :int
     """
     form_name = form_name.split(".")[0]
-    formid = {}
+    formid = None
     try:
         logger.info("creating form")
         (
-            await session.execute(
+            session.execute(
                     update(FnForm)
                     .values({"is_active": False})
                     .where(
@@ -114,7 +114,7 @@ async def create_form(form_name, lum_user_id, lum_org_id, session):
             modified_by=lum_user_id,
         )
         session.add(form_instance)
-        await session.commit()
+        session.commit()
         logger.info(f"Form saved with ID: {form_instance.fn_form_id}")
         formid = form_instance.fn_form_id
     except SQLAlchemyError as e:
@@ -140,23 +140,20 @@ async def create_user_data(df, formid, session):
         df = df.dropna()
         data = df.to_dict(orient="records")
 
-        ses = Session()
-
-        await session.run_sync(lambda ses: ses.bulk_insert_mappings(FnUserData, data))
-        await session.commit()
+        session.bulk_insert_mappings(FnUserData, data)
+        session.commit()
 
         logger.info(
             f"User data saved with ID : {formid}"
         )
     except SQLAlchemyError as e:
-        await session.rollback()
+        session.rollback()
         logger.exception(f"Error saving user data.: {e}")
     except Exception as e:
-        await session.rollback()
+        session.rollback()
         logger.exception(f"Error in SQL ORM: {e}")
     finally:
-        ses.close()
-        await session.close()
+        session.close()
 
 
 def fetch_from(userid, orgid):
