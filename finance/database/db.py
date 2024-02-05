@@ -32,19 +32,30 @@ def create_engine_and_session(database="financeApp"):
     Returns:
         session: Session Object
     """
-    conn_info = constants.get_conn_info(database)
-    engine = create_engine(
-       url=Engine.URL.create(
-                    drivername='mysql+mysqlconnector',
-                    username=conn_info["user"],
-                    password=conn_info["password"],
-                    host=conn_info["host"],
-                    port=conn_info["port"],
-                    database=conn_info["database"]
-        ),
-        pool_size=10,
-    )
+    config = constants.get_conn_info(database)
+    driver = config.pop('driver')
+    connector = None
 
+    if 'mysql' in driver:
+        connector = 'mysql+mysqlconnector'
+    if config.get("warehouse"):
+        engine_str = Engine.URL.create(drivername=connector,
+                                    username=config["userName"],
+                                    password=config["password"],
+                                    host=config["host"],
+                                    port=config["port"],
+                                    database=config["schema"],
+                                    warehouse=config["warehouse"])
+    else:
+        engine_str = Engine.URL.create(drivername=connector,
+                                    username=config["user"],
+                                    password=config["password"],
+                                    host=config["host"],
+                                    port=config["port"],
+                                    database=config["database"])
+
+
+    engine = create_engine(url=engine_str, pool_pre_ping=True, pool_recycle=3600)
     session = scoped_session(sessionmaker(bind=engine))
 
     constants.engine = engine
