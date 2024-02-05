@@ -74,12 +74,29 @@ def create_async_session(database: str ="financeApp") -> AsyncSession:
     Yields:
         Iterator[AsyncSession]: _description_
     '''
-    conn_info = constants.get_conn_info(database)
-    engine = create_async_engine(
-        f"""mysql+aiomysql://{conn_info["user"]}:{quote_plus(conn_info["password"])}@{conn_info["host"]}:
-        {conn_info["port"]}/{conn_info["database"]}""", pool_size=10)
+    config = constants.get_conn_info(database)
+    driver = config.pop('driver')
+    connector = None
 
+    if 'mysql' in driver:
+        connector = 'mysql+aiomysql'
+    if config.get("warehouse"):
+        engine_str = Engine.URL.create(drivername=connector,
+                                    username=config["userName"],
+                                    password=config["password"],
+                                    host=config["host"],
+                                    port=config["port"],
+                                    database=config["schema"],
+                                    warehouse=config["warehouse"])
+    else:
+        engine_str = Engine.URL.create(drivername=connector,
+                                    username=config["user"],
+                                    password=config["password"],
+                                    host=config["host"],
+                                    port=config["port"],
+                                    database=config["database"])
+    engine_str = create_async_engine(engine_str)
     async_session = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
+        bind=engine_str, class_=AsyncSession, expire_on_commit=False
     )
     return async_session
