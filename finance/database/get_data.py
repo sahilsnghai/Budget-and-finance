@@ -805,7 +805,6 @@ def save_scenario(data, session=None, created_session=False):
                 FnScenario.created_by == userid,
                 FnScenario.fn_scenario_id == scenarioid,
                 FnScenario.fn_form_id == formid,
-                FnScenario.is_active == True,
             )
             .update(update_values, synchronize_session="fetch")
         )

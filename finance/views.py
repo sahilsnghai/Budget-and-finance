@@ -529,9 +529,7 @@ class TokenAPIView(BaseAPIView):
                 email = req.GET["email"]
             except KeyError as e:
                 logger.info(f"{req.GET=}")
-                return Response(
-                    {"KeyError": f"key {e} not found"}, status=HTTP_400_BAD_REQUEST
-                )
+                raise KeyError(e)
             SECRET_CLIENT, SECRET_CLIENTID =  get_secret(orgid=orgid)
 
             if SECRET_CLIENT == None or SECRET_CLIENTID == None:
