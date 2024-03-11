@@ -71,7 +71,7 @@ async def format_df(df, **kwargs):
     logger.info(f"Before renaming: {df.columns}")
     df = df.rename(columns=COLUMNS)
     df["amount_type"] = df["amount_type"].replace(
-        {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0}
+        {"Actual": 1, "Projected": 0, "Budgeting": 0, "Budget": 0, "Projection": 0}
     )
     logger.info(f"{kwargs=}")
     df["created_by"] = df["modified_by"] = kwargs.get("userid", None)
