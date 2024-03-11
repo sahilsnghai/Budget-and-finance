@@ -36,7 +36,7 @@ SELECT_SENARIO_ITEMS = (
         FnScenarioData.project_name.label("Project Name"),
         case(
             (FnScenarioData.amount_type == 1, "Actual"),
-            (FnScenarioData.amount_type == 0, "Budget"),
+            (FnScenarioData.amount_type == 0, "Projection"),
             else_="Unknown",
         ).label("Amount Type"),
         func.round(
@@ -291,7 +291,7 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
                 FnUserData.amount.label("Amount"),
                 case(
                     (FnUserData.amount_type == 1, "Actual"),
-                    (FnUserData.amount_type == 0, "Budget"),
+                    (FnUserData.amount_type == 0, "Projection"),
                     else_="Unknown",
                 ).label("Amount Type"),
             ]
