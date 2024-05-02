@@ -30,6 +30,7 @@ from .cases.cases import (
     get_token,
 )
 
+Account_Type = "Account Type"
 
 @pytest.fixture
 def client():
@@ -382,7 +383,7 @@ def test_get_secret(
     params = {"organizationId": 1111}
     response = client.get(reverse("sso"), params)
 
-    assert response.status_code == 400
+    assert response.status_code == 302
 
 @patch("finance.database.get_data.receive_query")
 @patch("finance.database.get_data.Session")
