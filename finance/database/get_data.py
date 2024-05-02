@@ -18,8 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_, case, func, literal, desc, update
 from lumenore_apps.main_logger import set_up_logging
 from time import perf_counter
-from threading import Thread
-from .db import create_engine_and_session, create_async_session
+from .db import create_engine_and_session
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData, JwtSettings
 
 Session = create_engine_and_session()
@@ -35,6 +34,7 @@ SELECT_SENARIO_ITEMS = (
         FnScenarioData.account_subtype.label("Account SubType"),
         FnScenarioData.project_name.label("Project Name"),
         case(
+            (FnScenarioData.amount_type == 2, "Budget"),
             (FnScenarioData.amount_type == 1, "Actual"),
             (FnScenarioData.amount_type == 0, "Projection"),
             else_="Unknown",
@@ -290,6 +290,7 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
                 FnUserData.customer_name.label("Customer Name"),
                 FnUserData.amount.label("Amount"),
                 case(
+                    (FnScenarioData.amount_type == 2, "Budget"),
                     (FnUserData.amount_type == 1, "Actual"),
                     (FnUserData.amount_type == 0, "Projection"),
                     else_="Unknown",
