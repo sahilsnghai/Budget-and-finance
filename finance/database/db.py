@@ -23,7 +23,7 @@ from urllib.parse import quote_plus
 constants = Constants()
 
 
-def create_engine_and_session(database="financeApp"):
+def create_engine_and_session(database: str = "financeApp") -> scoped_session:
     """create_engine_and_session Session
 
     Args:
@@ -54,13 +54,13 @@ def create_engine_and_session(database="financeApp"):
                                     port=config["port"],
                                     database=config["database"])
 
-
     engine = create_engine(url=engine_str, pool_pre_ping=True, pool_recycle=3600)
     session = scoped_session(sessionmaker(bind=engine))
 
     constants.engine = engine
     constants.session = session
     return session
+
 
 def create_async_session(database: str ="financeApp") -> AsyncSession:
     '''create_async_session _summary_

@@ -19,6 +19,7 @@ from sqlalchemy import and_, case, func, literal, desc, update
 from lumenore_apps.main_logger import set_up_logging
 from time import perf_counter
 from .db import create_engine_and_session
+from pandas import DataFrame
 from .models import FnForm, FnUserData, FnScenario, FnScenarioData, JwtSettings
 
 Session = create_engine_and_session()
@@ -64,21 +65,21 @@ SELECT_SENARIO_ITEMS = (
 )
 
 
-def receive_query(query):
+def receive_query(query)-> list:
+    """receive_query
+
+    Args:
+        query (query): RowQuery
+
+    Returns:
+        list:
     """
-
-    Parameters
-    ----------
-    query
-
-    Returns
-    -------
-
-    """
-    return [row._asdict() for row in query]
+    return list(map(lambda row : row._asdict(),  query))
 
 
-async def create_form(form_name, lum_user_id, lum_org_id, session):
+async def create_form(
+    form_name: str, lum_user_id: int, lum_org_id: int, session
+) -> int:
     """Create Entry in fn_form
 
     Args:
@@ -124,7 +125,7 @@ async def create_form(form_name, lum_user_id, lum_org_id, session):
     return formid
 
 
-async def create_user_data(df, formid, session):
+async def create_user_data(df:DataFrame, formid: int, session):
     """Create Entry in fn_user_data
 
     Args:
@@ -137,9 +138,7 @@ async def create_user_data(df, formid, session):
     """
     try:
         logger.info("Updating user data")
-        df = df.dropna()
         data = df.to_dict(orient="records")
-
         session.bulk_insert_mappings(FnUserData, data)
         session.commit()
 
@@ -156,7 +155,7 @@ async def create_user_data(df, formid, session):
         session.close()
 
 
-def fetch_from(userid, orgid):
+def fetch_from(userid: int, orgid: int) -> list:
     """Fetch form data
 
     Args:
@@ -196,7 +195,7 @@ def fetch_from(userid, orgid):
     return form_names
 
 
-def fetch_scenario(formid, userid):
+def fetch_scenario(formid: int, userid: int) -> list:
     """fetch scenarios
 
     Args:
@@ -243,7 +242,9 @@ def fetch_scenario(formid, userid):
     return scenario_names
 
 
-def get_user_data(formid, userid, session=None, created_session=False, **karwgs):
+def get_user_data(
+    formid: int, userid: int, session=None, created_session=False, **karwgs: dict
+) -> list:
     """fetch user data from fn_user_data
 
     Args:
@@ -320,7 +321,7 @@ def get_user_data(formid, userid, session=None, created_session=False, **karwgs)
     return user_data
 
 
-def filter_column(scenarioid, formid, userid, **kwargs):
+def filter_column(scenarioid: int, formid: int, userid: int, **kwargs: dict) -> list:
     """fetch and filter user scenario data
 
     Args:
@@ -378,13 +379,13 @@ def filter_column(scenarioid, formid, userid, **kwargs):
 
 
 def create_scenario(
-    scenario_name,
-    scenario_decription,
-    formid,
-    userid,
+    scenario_name: str,
+    scenario_decription: str,
+    formid:int,
+    userid: int,
     session=None,
     created_session=False,
-):
+) -> tuple[int, bool]:
     """Create New Scenario
 
     Args:
@@ -450,7 +451,7 @@ def create_scenario(
 
 
 def create_user_data_scenario(
-    dataframe, scenarioid, session=None, created_session=False
+    dataframe: DataFrame, scenarioid: int, session=None, created_session=False
 ):
     """Migrate user data from fn_user_data to fn_scenario_data
 
@@ -481,7 +482,9 @@ def create_user_data_scenario(
         created_session and session.close()
 
 
-def get_user_scenario_new(scenarioid, formid, session=None, created_session=False):
+def get_user_scenario_new(
+    scenarioid: int, formid: int, session=None, created_session=False
+) -> list:
     """Fetch user scenario data
 
     Args:
@@ -491,7 +494,7 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
         created_session (bool, optional):. Defaults to False.
 
     Returns:
-        _type_:
+        scenario_data: list:
     """
     scenario_data = {}
     try:
@@ -531,7 +534,9 @@ def get_user_scenario_new(scenarioid, formid, session=None, created_session=Fals
     return scenario_data
 
 
-def update_scenario_percentage(data, filters_list, userid, scenarioid):
+def update_scenario_percentage(
+    data: dict, filters_list: list, userid: int, scenarioid: int
+) -> list[dict] | None:
     """This function update Change value column in fn_scenario_data.
 
     Args:
@@ -657,8 +662,8 @@ def update_scenario_percentage(data, filters_list, userid, scenarioid):
 
 
 def scenario_status_update(
-    userid, scenarioid, formid, status, session=None, created_session=False
-):
+    userid: int, scenarioid: int, formid: int, status: bool, session=None, created_session=False
+) -> int:
     """Scenario
 
     Args:
@@ -706,8 +711,8 @@ def scenario_status_update(
 
 
 def scenario_data_status_update(
-    userid, scenarioid, formid, status, session=None, created_session=False
-):
+    userid: int, scenarioid: int, formid: int, status: bool, session=None, created_session=False
+) -> int:
     """scenario_data_status_update
 
     _extended_summary_
@@ -766,7 +771,7 @@ def scenario_data_status_update(
     return stmt
 
 
-def save_scenario(data, session=None, created_session=False):
+def save_scenario(data: dict, session=None, created_session=False) -> int:
     """save_scenario This function save scenario
 
     Args:
@@ -824,8 +829,10 @@ def save_scenario(data, session=None, created_session=False):
     return stmt
 
 
-def update_change_value(data, filters_list, userid=None, scenarioid=None):
-    '''update_change_value _summary_
+def update_change_value(
+    data: dict, filters_list: list, userid: int = None, scenarioid: int = None
+) -> list[dict] | int:
+    """update_change_value _summary_
 
     Args:
         data (dict):
@@ -837,7 +844,7 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None):
 
     Returns:
         updated_data_list: [{.........}]
-    '''
+    """
     updated_data_list = 0
 
     try:
@@ -921,7 +928,12 @@ def update_change_value(data, filters_list, userid=None, scenarioid=None):
 
 
 def update_amount_type(
-    date, amount_type, userid=None, scenarioid=None, session=None, created_session=False
+    date: str,
+    amount_type: str,
+    userid: int = None,
+    scenarioid: int = None,
+    session=None,
+    created_session=False,
 ):
     '''update_amount_type _summary_
 
@@ -970,7 +982,7 @@ def update_amount_type(
     return updated_data
 
 
-def get_secret(orgid=None):
+def get_secret(orgid: int = None) -> tuple[str, str]:
     '''get_secret from jwt_settings
 
     Args:
