@@ -291,7 +291,7 @@ def get_user_data(
                 FnUserData.customer_name.label("Customer Name"),
                 FnUserData.amount.label("Amount"),
                 case(
-                    (FnScenarioData.amount_type == 2, "Budget"),
+                    (FnUserData.amount_type == 2, "Budget"),
                     (FnUserData.amount_type == 1, "Actual"),
                     (FnUserData.amount_type == 0, "Projection"),
                     else_="Unknown",
@@ -362,6 +362,9 @@ def filter_column(scenarioid: int, formid: int, userid: int, **kwargs: dict) -> 
                 query = query.filter(
                     FnScenarioData.business_unit == kwargs.get("business_unit")
                 )
+            print(
+                f'\nfilter column {query.statement.compile(dialect=session.bind.dialect, compile_kwargs={"literal_binds": True})} \n'
+            )
 
             user_data = receive_query(query.all())
             logger.info(
@@ -948,6 +951,7 @@ def update_amount_type(
     Returns:
         updated_data: int
     '''
+    updated_data = 0
     try:
         if session is None:
             session = Session()
@@ -961,6 +965,7 @@ def update_amount_type(
             session.query(FnScenarioData)
             .filter(
                 func.date_format(FnScenarioData.date, "%Y%m") == date,
+                FnScenarioData.amount_type == 0,
                 FnScenarioData.fn_scenario_id == scenarioid,
                 FnScenarioData.created_by == userid,
             )
